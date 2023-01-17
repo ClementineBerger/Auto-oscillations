@@ -50,8 +50,8 @@ p_ini = [gamma, 0]
 
 xi = W*H/Sc*np.sqrt(2*gamma_air*rho/pM) #
 #xi = 2
-A = xi*(2 * gamma - 1) / 2 /np.sqrt(gamma)
-B = -xi*(3*gamma-1)/8/gamma**(3/2)
+A = xi*(3 * gamma - 1) / 2 /np.sqrt(gamma)
+B = -xi*(3*gamma+1)/8/gamma**(3/2)
 C = -xi*(gamma +1)/16/gamma**(5/2)
 args = (F1, A, B, C, Y_m, omega)
 
