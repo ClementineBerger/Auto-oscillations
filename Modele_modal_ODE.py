@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 #%matplotlib inline
 
 import platform
+import time
 import soundfile as sf
 import os
 import sounddevice as sd
@@ -44,7 +45,7 @@ fs = 44100          #Fréquence d'échantillonnage
 
 omega = (2*np.pi*f)                     #Conversion freq/puls
 F1 = 2 * c / Lc                         #Coef. premier mode
-time = np.linspace(0,dur,fs*dur)            #Vecteur temps
+t = np.linspace(0,dur,fs*dur)            #Vecteur temps
 p_ini = [gamma, 0]
 
 xi = W*H/Sc*np.sqrt(2*gamma_air*rho/pM) #
@@ -141,11 +142,14 @@ def play(y,Fe=44100):
         
 #------------------------------------------------Moteur
 
+t1=time.time()
 X=np.array([gamma,0.1])
 p=RK4(X,args)
+tcalc=time.time()-t1
+print("Temps de calcul : "+str(tcalc)+"s")
 play(p)
 
-plt.plot(time, p, 'orange', linewidth = 2)
+plt.plot(t, p, 'orange', linewidth = 2)
 plt.xlabel('time (s)')
 plt.ylabel('pressure')
 plt.xlim(0,0.5)
