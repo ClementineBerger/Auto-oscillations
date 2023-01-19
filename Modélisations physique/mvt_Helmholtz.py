@@ -18,16 +18,21 @@ def coeffs(gamma,zeta):
     couplage F linéarisée
     F(p) = F0 + Ap + Bp**2 + Cp**3
     '''
-    F0 = zeta*(1-gamma)*np.sqrt(gamma)
-    A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)
-    B = -zeta*(3*gamma+1)/8/gamma**(3/2)
-    C = -zeta*(gamma+1)/16/gamma**(5/2)
+    if gamma == 0:
+        return 0, 0, 0, 0
+    else :
+        F0 = zeta*(1-gamma)*np.sqrt(gamma)
+        A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)
+        B = -zeta*(3*gamma+1)/8/gamma**(3/2)
+        C = -zeta*(gamma+1)/16/gamma**(5/2)
     return F0,A,B,C
 
 def Fapprox(p,F0,A,B,C,gamma,zeta):
     '''Renvoit le débit u suivant la pression p
     suivant la relation u = F(p) selon la version
     linéarisée de la fonction'''
+    if gamma == 0:
+        return 0
     if gamma - p >= 1 or gamma - p < 0:  # anche battante
         return 0
     else:
@@ -64,6 +69,8 @@ def GCalApprox(x, F0, A, B, C, eps, Z0):
 def F(p, gamma, zeta):
     '''Renvoit le débit u suivant la pression p
     suivant la relation u = F(p)'''
+    if gamma == 0:
+        return 0
     if gamma - p >= 1 or gamma - p < 0:
         return 0
     else:
