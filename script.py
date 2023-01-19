@@ -21,6 +21,18 @@ import numpy as np
 # r_dt : caractérise l'onde réfléchie
 # attention, on doit avoir sum(r_dt) = -1
 
+def resoudre(tableau, i):
+    # recherche le point d'annulation de tableau le plus proche possible de i
+    l = len(tableau)
+    changement_signe = tableau[0:l-1]*tableau[1:l] # il y a un point d'annulation entre tableau[j] et tableau[j+1] ssi tableau[j]*tableau[j+1] <= 0
+    negatif = changement_signe <= 0 # True aux indices où il y a un changement de signe
+    tab_i0 = (np.arange(l-1))[negatif] # indices auxquels il y a un changement de signe
+    if len(tab_i0)==0:
+        return np.argmin(np.abs(tableau))
+    i0 = np.argmin(np.abs(tab_i0-i)) # indice de l'indice le plus proche de i dans tab_i0
+    return tab_i0[i0]
+    
+
 def embouchure(p_m, Z, r_dt, nt, p_0=-1, p_end=1):
     pression = np.zeros(nt)
     flux = np.zeros(nt)
@@ -30,6 +42,8 @@ def embouchure(p_m, Z, r_dt, nt, p_0=-1, p_end=1):
     F = (p_m-p_F)*(p_F-p_end)
     test = p_F - Z*F
     
+    i_act = np.argmin(np.abs(p_F-p_m))
+    
     T2 = len(r_dt)-1
     
     for t in range(nt):
@@ -38,10 +52,19 @@ def embouchure(p_m, Z, r_dt, nt, p_0=-1, p_end=1):
         else:
             q = np.sum((pression[t-T2:t]+Z*flux[t-T2:t])*r_dt[T2:0:-1])
         # résoudre p = q + Z F(p)
-        i = np.argmin(np.abs(test-q))
+        try:
+            i = resoudre(test-q, i_act)
+        except:
+            print("t = ", t)
+            print("pression = ", p_F[i_act])
+            plt.plot(p_F,test)
+            plt.plot(p_F,q*np.ones(n_F))
+            plt.show()
+        i_act = i
         pression[t] = p_F[i]
         flux[t] = F[i]
     return pression,flux
+
 
 def amplitude(pression):
     nt = len(pression)
@@ -66,6 +89,8 @@ plt.legend()
 plt.xlabel("temps")
 plt.ylabel("pression")
 plt.show()
+
+# Pourquoi ça commence à -1 ?
 
 ampl = []
 pres = []
