@@ -35,11 +35,13 @@ def resoudre(tableau, i):
 
 def embouchure(p_m, Z, r_dt, nt, p_0=-1, p_end=1):
     pression = np.zeros(nt)
+    nul = np.zeros(nt)
     flux = np.zeros(nt)
     
     n_F = 200
     p_F = np.linspace(p_0,p_end,n_F)
     F = (p_m-p_F)*(p_F-p_end)
+    F = (F+np.abs(F))/2
     test = p_F - Z*F
     
     i_act = np.argmin(np.abs(p_F-p_m))
@@ -52,14 +54,8 @@ def embouchure(p_m, Z, r_dt, nt, p_0=-1, p_end=1):
         else:
             q = np.sum((pression[t-T2:t]+Z*flux[t-T2:t])*r_dt[T2:0:-1])
         # résoudre p = q + Z F(p)
-        try:
-            i = resoudre(test-q, i_act)
-        except:
-            print("t = ", t)
-            print("pression = ", p_F[i_act])
-            plt.plot(p_F,test)
-            plt.plot(p_F,q*np.ones(n_F))
-            plt.show()
+        i = resoudre(test-q, i_act)
+        nul[t] = test[i]-q
         i_act = i
         pression[t] = p_F[i]
         flux[t] = F[i]
@@ -77,46 +73,24 @@ import matplotlib.pyplot as plt
 r_dt = np.array([0,0,-0.9])
 nt = 50
 
-pression,_ = embouchure(0, .5, r_dt, nt)
-plt.plot(range(nt),pression,label="p_m=0")
-pression,_ = embouchure(0.2, .5, r_dt, nt)
-plt.plot(range(nt),pression,label="p_m=0.2")
-pression,_ = embouchure(0.4, .5, r_dt, nt)
-plt.plot(range(nt),pression,label="p_m=0.4")
-pression,_ = embouchure(0.6, .5, r_dt, nt)
-plt.plot(range(nt),pression,label="p_m=0.6")
+pression,flux = embouchure(0, .5, r_dt, nt)
+plt.plot(range(nt),pression,label="pression")
+plt.plot(range(nt),flux,label="flux")
 plt.legend()
 plt.xlabel("temps")
 plt.ylabel("pression")
 plt.show()
-
-# Pourquoi ça commence à -1 ?
-
+"""
 ampl = []
 pres = []
 for m in range(400):
     p_m = m/1000
     pres.append(p_m)
-    pression,_ = embouchure(p_m, .5, r_dt, nt)
+    pression,_ = embouchure(p_m, 1, r_dt, nt)
     ampl.append(amplitude(pression))
 plt.plot(pres,ampl)
 plt.xlabel("pression dans la bouche")
 plt.ylabel("amplitude pression résultante")
 plt.title("bifurcation")
 plt.show()
-
-# OK donc le régime permanent est bien atteint à nt/2, c'est pas à cause de ça
-
-# Z n'a absolument aucune importance
-"""
-Qui c'est qui fait des calculs sur le script python parce que flemme de sortir du papier ? C'est moi
-
-p(t) = (r*(p+Zu))(t) + ZF(p(t))
-p(t)-ZF(p(t)) = -p(t-T)-ZF(p(t-T))
-Supposons que T est une anti-période, alors dp(t-T)=-dp(t) :
-2p0 - ZF(p0+dp(t)) + ZF(p0-dp(t)) = 0
-ou sinon sans le DL :
-ZF(p) = sin(pi p)
-sin(p0-dp) - sin(p0+dp) = cos(p0)sin(dp)
-donc p0 = cos(p0) sin(dp) sauf que du coup on a des arcsin(truc plus grand que 1)
 """
