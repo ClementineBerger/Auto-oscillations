@@ -99,14 +99,14 @@ def definition_listes_G(gamma, zeta,borne_min, borne_max, nb_pts,approx=False):
     borne_min, borne_max : couple des bornes de x
     nb_pts : nombre de points de calcul
     '''
-    x = np.linspace(-borne_min, borne_max, nb_pts)
+    x = np.linspace(borne_min, borne_max, nb_pts)
     liste_G = np.zeros_like(x)
     x_G = np.zeros_like(x)
     if approx :
         for i in range(len(x)):
             X = rotationGapprox(x[i], gamma, zeta)
-        liste_G[i] = X[1]
-        x_G[i] = X[0]
+            liste_G[i] = X[1]
+            x_G[i] = X[0]
     else :
         for i in range(len(x)):
             X = rotation_G(x[i], gamma, zeta)
