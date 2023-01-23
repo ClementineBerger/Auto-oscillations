@@ -33,18 +33,23 @@ def resoudre(tableau, i):
     return tab_i0[i0]
     
 
-def embouchure(p_m, Z, r_dt, nt, p_0=-1, p_end=1):
+def embouchure(p_m, Z, r_dt, nt):
     pression = np.zeros(nt)
     nul = np.zeros(nt)
     flux = np.zeros(nt)
     
-    n_F = 200
-    p_F = np.linspace(p_0,p_end,n_F)
-    F = (p_m-p_F)*(p_F-p_end)
-    F = (F+np.abs(F))/2
-    test = p_F - Z*F
+    n_F = 201
+    p = np.linspace(-1,1,n_F) # p[i] = i/100-1
+    F = np.zeros(n_F)
+    # On veut 1-p_m+p > 0 et p_m-p > 0
+    # donc p_m-1 < p < p_m
+    # donc p_m*100 < i < (p_m+1)*100
+    imin = int(p_m*100)
+    imax = int((p_m+1)*100)
+    F[imin:imax] = 0.3 * (1 - p_m + p[imin:imax]) * np.sqrt(p_m - p[imin:imax])
+    test = p - Z*F
     
-    i_act = np.argmin(np.abs(p_F-p_m))
+    i_act = np.argmin(np.abs(p-p_m))
     
     T2 = len(r_dt)-1
     
@@ -57,7 +62,7 @@ def embouchure(p_m, Z, r_dt, nt, p_0=-1, p_end=1):
         i = resoudre(test-q, i_act)
         nul[t] = test[i]-q
         i_act = i
-        pression[t] = p_F[i]
+        pression[t] = p[i]
         flux[t] = F[i]
     return pression,flux
 
@@ -70,21 +75,22 @@ def amplitude(pression):
 
 import matplotlib.pyplot as plt
 
-r_dt = np.array([0,0,-0.9])
-nt = 50
-
-pression,flux = embouchure(0, .5, r_dt, nt)
-plt.plot(range(nt),pression,label="pression")
-plt.plot(range(nt),flux,label="flux")
-plt.legend()
+r_dt = np.array([0,0,-1])
+nt = 200
+"""
+for p in range(10):
+    pression,_ = embouchure(p/10, 1, 0.95*r_dt, nt)
+    plt.plot(range(nt),pression,label=str(p/10))
 plt.xlabel("temps")
 plt.ylabel("pression")
+plt.title("en fonction de p_m (gamma)")
+plt.legend()
 plt.show()
 """
 ampl = []
 pres = []
 for m in range(400):
-    p_m = m/1000
+    p_m = m/400
     pres.append(p_m)
     pression,_ = embouchure(p_m, 1, r_dt, nt)
     ampl.append(amplitude(pression))
@@ -93,4 +99,3 @@ plt.xlabel("pression dans la bouche")
 plt.ylabel("amplitude pression résultante")
 plt.title("bifurcation")
 plt.show()
-"""
