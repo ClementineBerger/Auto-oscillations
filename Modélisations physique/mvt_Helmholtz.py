@@ -208,5 +208,3 @@ def simulation(t_max, fe, gamma, zeta, L, c,approx=False, fig=False):
         plt.tight_layout()
         
     return p, u
-    
-    
