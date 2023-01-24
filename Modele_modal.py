@@ -21,7 +21,7 @@ import tempfile
 
 #------------------------------------------------Contrôle
 
-gamma = 0.5
+gamma = 0.55
 
 #------------------------------------------------Paramètres d'entrée
 
@@ -99,7 +99,7 @@ p, dp = odeint(ED, p_ini, time).T
 
 #------------------------------------------------Affichage
 
-plt.plot(time, p*100, 'orange', linewidth = 2)
+plt.plot(time, p*10000000, 'orange', linewidth = 2)
 plt.xlabel('time (s)')
 plt.ylabel('pressure')
 plt.xlim(0,0.5)
