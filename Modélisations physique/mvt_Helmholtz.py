@@ -134,7 +134,6 @@ def simulation(t_max, fe, gamma, zeta, L, c,approx=False, fig=False):
     c : célérité des ondes
     '''
     
-    
     # Initialisation des paramètres
     T = retardT(L,c)
     
@@ -152,7 +151,7 @@ def simulation(t_max, fe, gamma, zeta, L, c,approx=False, fig=False):
     F0,A,B,C = coeffs(gamma,zeta)
     
     # Définition de la fonction G
-    x_G, liste_G = definition_listes_G(gamma, zeta, -3, 3, 2500,approx=approx)
+    x_G, liste_G = definition_listes_G(gamma, zeta, -50, 50, 10000,approx=approx)
     
     ########### Simulation
     
@@ -196,7 +195,7 @@ def simulation(t_max, fe, gamma, zeta, L, c,approx=False, fig=False):
     # Plot figure
     
     if fig :
-        plt.figure(figsize=(7,7),dpi=150)
+        plt.figure(figsize=(7,7),dpi=100)
         plt.plot(compute_time,Pmoins_compute,color='k',label=r'$p^-$')
         plt.plot(compute_time,Pplus_compute,color='k',label=r'$p^+$')
         plt.plot(sim_time,p,color='grey',label=r"pression $p$")
