@@ -46,8 +46,10 @@ def embouchure(p_m, Z, r_dt, nt):
     # donc p_m*100 < i < (p_m+1)*100
     imin = int(p_m*100)
     imax = int((p_m+1)*100)
-    F[imin:imax] = 0.3 * (1 - p_m + p[imin:imax]) * np.sqrt(p_m - p[imin:imax])
+    F[imin:imax] = 0.4 * (1 - p_m + p[imin:imax]) * np.sqrt(p_m - p[imin:imax])
     test = p - Z*F
+    plt.plot(F)
+    plt.show()
     
     i_act = np.argmin(np.abs(p-p_m))
     
@@ -77,7 +79,8 @@ import matplotlib.pyplot as plt
 
 r_dt = np.array([0,0,-1])
 nt = 200
-"""
+
+'''
 for p in range(10):
     pression,_ = embouchure(p/10, 1, 0.95*r_dt, nt)
     plt.plot(range(nt),pression,label=str(p/10))
@@ -86,6 +89,7 @@ plt.ylabel("pression")
 plt.title("en fonction de p_m (gamma)")
 plt.legend()
 plt.show()
+'''
 """
 ampl = []
 pres = []
@@ -99,3 +103,4 @@ plt.xlabel("pression dans la bouche")
 plt.ylabel("amplitude pression résultante")
 plt.title("bifurcation")
 plt.show()
+"""
