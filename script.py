@@ -48,8 +48,6 @@ def embouchure(p_m, Z, r_dt, nt):
     imax = int((p_m+1)*100)
     F[imin:imax] = 0.4 * (1 - p_m + p[imin:imax]) * np.sqrt(p_m - p[imin:imax])
     test = p - Z*F
-    plt.plot(F)
-    plt.show()
     
     i_act = np.argmin(np.abs(p-p_m))
     
@@ -82,7 +80,7 @@ nt = 200
 
 '''
 for p in range(10):
-    pression,_ = embouchure(p/10, 1, 0.95*r_dt, nt)
+    pression,_ = embouchure(p/10, 1, 0.95*r_dt, nt)     # Z=1 car ADIMENSIONNEE !!!
     plt.plot(range(nt),pression,label=str(p/10))
 plt.xlabel("temps")
 plt.ylabel("pression")
