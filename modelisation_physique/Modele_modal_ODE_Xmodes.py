@@ -7,8 +7,6 @@ Created on Mon Jan 16 11:10:51 2023
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-#%matplotlib inline
-
 import platform
 import time as tim
 import soundfile as sf
@@ -18,12 +16,12 @@ import tempfile
 
 #------------------------------------------------Contrôle
 
-gamma = 0.6
-dur=3;              #Durée de l'enregistrement à produire en secondes 
+gamma = 0.85
 zeta = 0.5
 #------------------------------------------------Paramètres d'entrée
 
-nb_mode=3;
+nb_mode=3;          #Nombre de modes à modéliser
+dur=3;              #Durée de l'enregistrement à produire en secondes 
 W = 3e-2            #Largeur de la bouche
 H = 2e-3            #Longueur de la bouche
 gamma_air = 1.4     #Indice adiabatique
@@ -33,16 +31,20 @@ rc = 3e-2           #rayon de la clarinette
 Lc = 60e-2          #longueur clarinette
 Sc = np.pi*rc**2    #section clarinette
 pM = 0.1            #Pression de plaquage statique
-Y_m=np.ones(nb_mode)*1 /1233.36096998528
-Y_m[0] = 1 /1233.36096998528 #Admittance au premier mode
-Y_m[1] = 1 /1233.36096998528                  #Admittance au deuxième mode
+
+#------------------------------------------Admittances
+Y_m=np.ones(nb_mode)*1 /1233.36096998528    #Initialisation de toutes les admittances à une valeur par défaut
+Y_m[0] = 1 /1233.36096998528                #Admittance au premier mode
+Y_m[1] = 1 /1233.36096998528                #Admittance au deuxième mode
 #Y_m[2] = 1 /1233.36096998528
 
-f=np.zeros(nb_mode) #Initialisation générale fréquences des modes
-Leff=Lc #Cas Clarinette Zs=0
-Leff=Lc+(8*rc/(3*np.pi)) #Cas Clarinette bafflée
-#Leff=Lc+0.6*rc #Cas Clarinette non bafflée
-f=np.array([(2*n+1)*c/(4*Leff) for n in range(nb_mode)]) #Cas particulier de la clarinette 
+#------------------------------------------Fréquences
+
+f=np.zeros(nb_mode)                 #Initialisation générale fréquences des modes
+Leff=Lc                             #Cas Clarinette Zs=0
+Leff=Lc+(8*rc/(3*np.pi))            #Cas Clarinette bafflée
+#Leff=Lc+0.6*rc                     #Cas Clarinette non bafflée
+f=np.array([(2*n+1)*c/(4*Leff) for n in range(nb_mode)]) #Cas particulier de la clarinette (quintoie)
 """
 f[0] = 220                     #Fréquence premier mode ajustée à la main
 f[1] = 440                     #Fréquence deuxième mode
@@ -55,30 +57,34 @@ fs = 44100          #Fréquence d'échantillonnage
 
 
 #------------------------------------------------Variables calculées
-omega=np.array([x*2*np.pi for x in f])           #Conversion freq/puls
-F=np.array([2*x* c / Lc for x in range(1,nb_mode+1)]) #Coefficients modaux
-time = np.linspace(0,3,fs*3)            #Vecteur temps
+omega=np.array([x*2*np.pi for x in f])                  #Conversion freq/puls
+F=np.array([2*x* c / Lc for x in range(1,nb_mode+1)])   #Coefficients modaux
+time = np.linspace(0,3,fs*3)                            #Vecteur temps
 
-#zeta = W*H/Sc*np.sqrt(2*gamma_air*rho/pM) #Paramètres pour l'équation du modèle
+#zeta = W*H/Sc*np.sqrt(2*gamma_air*rho/pM)              #Valeur de zeta en fonction des paramètres de la bouche   
 
-A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)
+A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)            #Paramètres pour l'équation du modèle
 B = -zeta*(3*gamma+1)/8/gamma**(3/2)
 C = -zeta*(gamma +1)/16/gamma**(5/2)
 
 
-args = (A, B, C,F,omega,Y_m)
+args = (A, B, C,F,omega,Y_m)                            #Encapsulation des paramètres pour la résolution
 
 #--------------------------------Vecteurs utiles pour les calculs
-pair = np.array([x%2 for x in range(nb_mode*2)]) #Vecteur à multiplier avec X pour avoir les dérivées uniquement
-impair=np.array([(x+1)%2 for x in range(nb_mode*2)])#Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
-x_out=np.zeros(nb_mode*2)
-Fbis=np.zeros(nb_mode*2)#Conversion de F pour qu'il fasse la taille nb_mode*2
+pair = np.array([x%2 for x in range(nb_mode*2)])        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
+impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+x_out=np.zeros(nb_mode*2)                               
+Fbis=np.zeros(nb_mode*2)                                #Conversion de F pour qu'il fasse la taille nb_mode*2
 Fbis[1::2]=F
 omegabis=np.zeros(nb_mode*2)
 omegabis[::2]=omega
 Y_mbis=np.zeros(nb_mode*2)
-Y_mbis[1::2]=Y_m#------------------Méthodes de Runge-Kutta 
-def RK1(X,args):
+Y_mbis[1::2]=Y_m
+
+
+#---------------------------------------Méthodes de Runge-Kutta 
+
+def RK1(X,args):                    #Ordre 1
     dt=1/fs
     x2=np.zeros(fs*dur)
     x2[0]=X[0]
@@ -88,7 +94,7 @@ def RK1(X,args):
         x2[i+1]=X[0]     
     return x2
 
-def RK2(X,args):
+def RK2(X,args):                    #Ordre 2
     dt=1/fs
     x2=np.zeros(fs*dur)
     x2[0]=X[0]
@@ -101,7 +107,7 @@ def RK2(X,args):
         x2[i+1]=X[0]
     return x2
 
-def RK4(X,args):
+def RK4(X,args):                    #Ordre 4
     dt=1/fs
     x2=np.zeros(fs*dur)
     x2[0]=X[0]+X[2]
@@ -127,6 +133,8 @@ def RK4(X,args):
         x2[i+1]=sum(impair*X)
     return x2
 
+#---------------------------------------- Définition du système \Dot{X}=f(X)
+
 def funtion(x,args):
     (A, B, C,F,omega,Y_m) = args
 
@@ -143,6 +151,7 @@ def funtion(x,args):
     return x_out
 
 
+#------------------------------------------ Fonction pour jouer le son et enregistrer le wav
 def play(y,Fe=44100):
     rep=1
     z=np.real(y)/(abs(np.real(y)).max())
@@ -172,15 +181,17 @@ def play(y,Fe=44100):
         
 #------------------------------------------------Moteur
 
-t1=tim.time()
-#X=np.array([gamma,0.1]) #Pour un mode
-X=[gamma*i for i in impair]
+t1=tim.time()                   #Démarrage du timer
 
-p=RK4(X,args)
-tcalc=tim.time()-t1
+X=[gamma*i for i in impair]     #Initialisation de X avec p_n=gamma à l'instant 0
+
+p=RK4(X,args)                   #Appel de la résolution
+tcalc=tim.time()-t1             #Arrêt du timer
 print("Temps de calcul : "+str(tcalc)+"s")
-play(p)
+play(p)                         #Ecoute du son
 
+
+#-----------------------------------------------Plots
 plt.plot(time, p, 'orange', linewidth = 2)
 plt.xlabel('time (s)')
 plt.ylabel('pressure')
