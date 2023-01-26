@@ -21,7 +21,8 @@ import tempfile
 
 #------------------------------------------------Contrôle
 
-gamma = 0.8
+gamma = 0.6
+zeta = 0.5
 
 #------------------------------------------------Paramètres d'entrée
 
@@ -35,14 +36,22 @@ rc = 3e-2           #rayon de la clarinette
 Lc = 60e-2          #longueur clarinette
 Sc = np.pi*rc**2    #section clarinette
 pM = 0.1            #Pression de plaquage statique
-Y_m=np.zeros(nb_mode)
+Y_m=np.ones(nb_mode)*1 /1233.36096998528
 Y_m[0] = 1 /1233.36096998528 #Admittance au premier mode
-Y_m[1] = 1 /1233.36096998528                  #Admittance au deuxième mode
-Y_m[2] = 1 /1233.36096998528
-f=np.zeros(nb_mode)
-f[0] = 220                     #Fréquence premier mode
+#Y_m[1] = 1 /1233.36096998528                  #Admittance au deuxième mode
+#Y_m[2] = 1 /1233.36096998528
+
+f=np.zeros(nb_mode) #Initialisation générale fréquences des modes
+Leff=Lc #Cas Clarinette Zs=0
+Leff=Lc+(8*rc/(3*np.pi)) #Cas Clarinette bafflée
+#Leff=Lc+0.6*rc #Cas Clarinette non bafflée
+f=np.array([(2*n+1)*c/(4*Leff) for n in range(nb_mode)]) #Cas particulier de la clarinette 
+"""
+f[0] = 220                     #Fréquence premier mode ajustée à la main
 f[1] = 440                     #Fréquence deuxième mode
 f[2] = 660
+f[3] = 880
+f[4] = 1100"""
 #------------------------------------------------Variables générales
 
 fs = 44100          #Fréquence d'échantillonnage
@@ -53,8 +62,7 @@ omega=np.array([x*2*np.pi for x in f])           #Conversion freq/puls
 F=np.array([2*x* c / Lc for x in range(1,nb_mode+1)]) #Coefficients modaux
 time = np.linspace(0,3,fs*3)            #Vecteur temps
 
-zeta = W*H/Sc*np.sqrt(2*gamma_air*rho/pM) #
-#zeta = 2
+#zeta = W*H/Sc*np.sqrt(2*gamma_air*rho/pM) #Paramètres pour l'équation du modèle
 A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)
 B = -zeta*(3*gamma+1)/8/gamma**(3/2)
 C = -zeta*(gamma +1)/16/gamma**(5/2)
@@ -62,11 +70,29 @@ C = -zeta*(gamma +1)/16/gamma**(5/2)
 
 args = (A, B, C,F,omega,Y_m)
 
+#--------------------------------Vecteurs utiles pour les calculs
+pair = np.array([x%2 for x in range(nb_mode*2)]) #Vecteur à multiplier avec X pour avoir les dérivées uniquement
+impair=np.array([(x+1)%2 for x in range(nb_mode*2)])#Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+#x_out=np.zeros(nb_mode*2)
+Fbis=np.zeros(nb_mode*2)#Conversion de F pour qu'il fasse la taille nb_mode*2
+Fbis[1::2]=F
+omegabis=np.zeros(nb_mode*2)
+omegabis[::2]=omega
+Y_mbis=np.zeros(nb_mode*2)
+Y_mbis[1::2]=Y_m
 #------------------------------------------------Fonctions
 def update_parameters(*args):
     def ODE_NL(x, t):
-        (A, B, C,F1,F2,omega1,omega2,Y_m1,Y_m2) = args
-        return [x[1], (x[1]+x[3])*F1*((A-Y_m1)+2*B*(x[0]+x[2])+3*C*(x[0]+x[2])**2) - omega1**2*x[0],x[3],(x[1]+x[3])*F2*((A-Y_m2)+2*B*(x[0]+x[2])+3*C*(x[0]+x[2])**2) - omega2**2*x[2]]
+        (A, B, C,F,omega,Y_m) = args
+
+        commun=sum(x*pair)*(A+2*B*sum(x*impair)+3*C*sum(x*impair)**2)
+        x_out=np.zeros(nb_mode*2)
+        x_out[1:]=Fbis[1:]*commun-(Y_mbis*x)[1:]-(np.power(omegabis,2)*x)[:-1]
+        x_out[:-1]=x_out[:-1]+(x*pair)[1:]
+        
+        #[X[1], F1*(X[1]+X[3])*(A+2*B*(X[0]+X[2])+3*C*(X[0]+X[2])**2)-Y_m1*X[1]- omega1**2*X[0]
+        
+        return x_out
     return ODE_NL
 
 def play(y,Fe=44100):
@@ -98,11 +124,13 @@ def play(y,Fe=44100):
 #------------------------------------------------Moteur
 
 #p_ini = [gamma, 0] #Pour un mode
-p_ini = [gamma, 0,gamma,0] # Pour deux modes
+#p_ini = [gamma, 0,gamma,0] # Pour deux modes
+p_ini=[gamma*i for i in impair]
+
 
 ED = update_parameters(*args)
-p1, dp,p2,dddp = odeint(ED, p_ini, time).T
-p=p1+p2;
+y = odeint(ED, p_ini, time).T
+p=impair@y;
 #------------------------------------------------Affichage
 
 plt.plot(time, p*10000000, 'orange', linewidth = 2)
