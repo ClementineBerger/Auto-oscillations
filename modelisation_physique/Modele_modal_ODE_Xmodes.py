@@ -20,7 +20,7 @@ import tempfile
 
 gamma = 0.6
 dur=3;              #Durée de l'enregistrement à produire en secondes 
-zeta = 0.5 #Bug au dessus de 0.51
+zeta = 0.5
 #------------------------------------------------Paramètres d'entrée
 
 nb_mode=3;
