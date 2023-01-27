@@ -43,7 +43,7 @@ def F(list_p, gamma, zeta):
     if gamma == 0:
         return np.zeros(len(list_p))
     else :
-        valid = (gamma - list_p < 1 and gamma - list_p > 0)
+        valid = (gamma - list_p < 1) & (gamma - list_p > 0)
         u = zeta * (1 - gamma + list_p) * np.nan_to_num(np.sqrt(gamma - list_p)) * valid
     return u
     
