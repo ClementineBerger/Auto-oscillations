@@ -1,10 +1,8 @@
 """
-
 @author : Clémentine BERGER & Amélie PICARD
 
 Implémentation guide d'onde suivant l'article de McIntyre : à l'avantage d'être plus modulable
 avec la possibilité de changer de fonction de réflexion au bout du guide d'onde
-
 """
 
 
