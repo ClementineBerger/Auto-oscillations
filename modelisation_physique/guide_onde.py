@@ -93,9 +93,10 @@ def convolution(ind_tau,reflex_list,signal_list):
     '''
     
     x1 = reflex_list[0:ind_tau+1]
+    ind_nonzero = x1 != 0
     x2 = np.flipud(signal_list[0:ind_tau+1])
     
-    integrate = intgr.trapz(y=x1*x2)  
+    integrate = intgr.trapz(y=x1[ind_nonzero]*x2[ind_nonzero])  
     
     return integrate
 
