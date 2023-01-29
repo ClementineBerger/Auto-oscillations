@@ -20,6 +20,9 @@ from IPython.display import Audio
 # L = longueur du guide d'onde
 # gamma = rapport pression de bouche / pression de plaquage
 # zeta = paramètre caractéristique de l'anche
+# type_reflection = dirac ou triangle (essayer de rajouter gaussien)
+# frac_T = pour le type triangle -> défini la demi largeur du triangle égale à T/frac_T
+
 
 
 ### Définition des fonctions 
@@ -77,7 +80,7 @@ def find_zero(tableau, i):
     i0 = np.argmin(np.abs(tab_i0-i)) # indice de l'indice le plus proche de i dans tab_i0
     return tab_i0[i0]
 
-def convolution(ind_tau,reflex_list,signal_list,time):
+def convolution(ind_tau,reflex_list,signal_list):
     '''
     Calcul de la convolution entre le signal p + u et la fonction de réflexion 
     (aux temps passés) avec une intégration par la méthode des trapèzes
@@ -85,6 +88,8 @@ def convolution(ind_tau,reflex_list,signal_list,time):
     ind_tau = indice du temps de calcul
     reflex_list = liste des coefficients de réflexion dans le temps
     signal_list = liste p + u 
+    
+    (plus rapide que scipy...)
     '''
     
     x1 = reflex_list[0:ind_tau+1]
@@ -144,6 +149,7 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10 ,fig=Fal
     
     # Initialisation des paramètres
     T = retardT(L,c)
+    indT = int(T*fe)
     
     time = (np.arange(int(t_max * fe)) / fe)  # temps de simulation
     Nsim = len(time)
@@ -160,24 +166,33 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10 ,fig=Fal
 
     i_act = np.argmin(np.abs(tab_p-gamma)) + 1
     
-    for j in range(Nsim): 
-        
-        ph = convolution(ind_tau=j,reflex_list = reflex_list, signal_list = p + u,time=time)
-        i = find_zero(solvF-ph,i_act)
-        i_act = i
-        p[j] = tab_p[i]
-        u[j] = tab_F[i]
+    if type_reflection=='dirac':
+        for j in range(Nsim): 
+            if j < indT :
+                ph = -(p[0]+u[0])
+            else :
+                ph = -(p[j-indT]+u[j-indT])
+            i = find_zero(solvF-ph,i_act)
+            i_act = i
+            p[j] = tab_p[i]
+            u[j] = tab_F[i]
+    
+    else :
+        for j in range(Nsim): 
+            ph = convolution(ind_tau=j,reflex_list = reflex_list, signal_list = p + u)
+            i = find_zero(solvF-ph,i_act)
+            i_act = i
+            p[j] = tab_p[i]
+            u[j] = tab_F[i]
         
     if fig :
         plt.figure(figsize=(10,5))
-        plt.plot(time,p,label="McIntyre")
-        #plt.plot(sim_time,p_maganza*np.max(p)/np.max(p_maganza),label="Maganza")
+        plt.plot(time,p)
         plt.xlim(0,0.2)
         plt.ylim(-1.1, 1.1)
         plt.tight_layout()
         plt.xlabel("Temps en s",size=14)
         plt.ylabel("Amplitude",size=14)
-        plt.legend(fontsize=14)
         plt.show()
         
     #if sound :
