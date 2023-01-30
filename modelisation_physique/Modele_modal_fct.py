@@ -15,7 +15,7 @@ import sounddevice as sd
 import tempfile
 
 #------------------------------------------------Contrôle
-
+'''
 gamma = 0.6
 zeta = 0.2
 nb_mode=2           #Nombre de modes à modéliser
@@ -24,7 +24,7 @@ fs = 44100          #Fréquence d'échantillonnage
 L = 60e-2           #longueur clarinette
 c = 343             #Vitesse son
 rc = 3e-2           #rayon de la clarinette
-
+'''
 #------------------------------------------------Paramètres d'entrée
 
 
@@ -39,49 +39,49 @@ rc = 3e-2           #rayon de la clarinette
 
 #---------------------------------------Méthodes de Runge-Kutta 
 
-def RK1(X,args,vecs):                    #Ordre 1
+def RK1(X,dur,nb_mode, fs,args,vecs):                    #Ordre 1
     dt=1/fs
     impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     
-    x2=np.zeros(fs*dur)
+    x2=np.zeros(int(fs*dur))
     x2[0]=sum(impair*X)
     for i in range(fs*dur-1):
-        Xs=[x*dt for x in funtion(X,args,vecs)]
+        Xs=[x*dt for x in func(X,dur,nb_mode, fs,args,vecs)]
         X=np.add(X,Xs)
         x2[i+1]=sum(impair*X)    
     return x2
 
-def RK2(X,args,vecs):                    #Ordre 2
+def RK2(X,dur,nb_mode, fs,args,vecs):                    #Ordre 2
     dt=1/fs
-    x2=np.zeros(fs*dur)
+    x2=np.zeros(int(fs*dur))
     impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     
     x2[0]=sum(impair*X)
     for i in range(fs*dur-1):
-        Xp=[x*dt/2 for x in funtion(X,args,vecs)]
+        Xp=[x*dt/2 for x in func(X,dur,nb_mode, fs,args,vecs)]
         #print(Xp)
-        Xs=[x*dt for x in funtion(np.add(X,Xp),args,vecs)]
+        Xs=[x*dt for x in func(np.add(X,Xp),dur,nb_mode, fs,args,vecs)]
         X=np.add(X,Xs)
         #print(Xs)
         x2[i+1]=sum(impair*X)
     return x2
 
-def RK4(X,args,vecs):                    #Ordre 4
+def RK4(X,dur,nb_mode, fs,args,vecs):                    #Ordre 4
     dt=1/fs
-    x2=np.zeros(fs*dur)
+    x2=np.zeros(int(fs*dur))
     (Fbis,omegabis,Y_mbis,pair,impair,x_out)=vecs
     x2[0]=sum(impair*X)
     for i in range(fs*dur-1):
-        k1=funtion(X,args,vecs)
+        k1=func(X,dur,nb_mode, fs,args,vecs)
         
         k1x=[x*dt/2 for x in k1]
-        k2=funtion(np.add(X,k1x),args,vecs)
+        k2=func(np.add(X,k1x),dur,nb_mode, fs,args,vecs)
         
         k2x=[x*dt/2 for x in k2]
-        k3=funtion(np.add(X,k2x),args,vecs)
+        k3=func(np.add(X,k2x),dur,nb_mode, fs,args,vecs)
         
         k3x=[x*dt for x in k3]
-        k4=funtion(np.add(X,k3x),args,vecs)
+        k4=func(np.add(X,k3x),dur,nb_mode, fs,args,vecs)
         
         k2s=[x*2 for x in k2]
         k3s=[x*2 for x in k3]
@@ -95,7 +95,7 @@ def RK4(X,args,vecs):                    #Ordre 4
 
 #---------------------------------------- Définition du système \Dot{X}=f(X)
 
-def funtion(x,args,vecs):
+def func(x,dur,nb_mode, fs,args,vecs):
     (A, B, C,F,omega,Y_m) = args
     (Fbis,omegabis,Y_mbis,pair,impair,x_out) =vecs
 
@@ -135,13 +135,14 @@ def play(y,Fe=44100):
             if rep is None:
                 print ('Répondre par o ou n, merci. ')
     if rep:
-        fichier2='C:/Users/GaHoo/Desktop/Cours/ATIAM/9. PAM/Code/son.wav' #Adresse du fichier exporté, à modifier
+        fichier2='son.wav' #Adresse du fichier exporté, à modifier
         sf.write(fichier,z,Fe)
         sf.write(fichier2,z,Fe)     #Ecrit le fichier wav dans le fichier
         os.system(''+fichier+' &')
         
 #------------------------------------------------Fonction faisant tourner le modèle
-def simulation(dur,nb_mode, fe, gamma, zeta, L,c,rc,fig=False, sound=False):
+def simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=False, sound=False):
+    
     
     #------------------------------------------Admittances
     Y_m=np.ones(nb_mode)*1 /1233.36096998528    #Initialisation de toutes les admittances à une valeur par défaut
@@ -168,7 +169,7 @@ def simulation(dur,nb_mode, fe, gamma, zeta, L,c,rc,fig=False, sound=False):
     #------------------------------------------------Variables calculées
     omega=f*2*np.pi                  #Conversion freq/puls  
     F=2*c/L*np.arange(1,nb_mode+1)                          #Coefficients modaux
-    time = np.linspace(0,dur,fs*dur)                            #Vecteur temps
+    time = np.linspace(0,dur,int(fs*dur))                            #Vecteur temps
 
     
     A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)            #Paramètres pour l'équation du modèle
@@ -193,9 +194,9 @@ def simulation(dur,nb_mode, fe, gamma, zeta, L,c,rc,fig=False, sound=False):
     t1=tim.time()                   #Démarrage du timer
     X=gamma*impair                  #Initialisation de X avec p_n=gamma à l'instant 0
 
-    p=RK4(X,args,vecs)                   #Appel de la résolution
+    p=RK4(X,dur,nb_mode, fs,args,vecs)                   #Appel de la résolution
     tcalc=tim.time()-t1             #Arrêt du timer
-    print("Temps de calcul : "+str(tcalc)+"s")
+    #print("Temps de calcul : "+str(tcalc)+"s")
     
     if sound==True:
         play(p)                         #Ecoute du son
@@ -218,4 +219,7 @@ def simulation(dur,nb_mode, fe, gamma, zeta, L,c,rc,fig=False, sound=False):
     return p,time
 
 
-simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=True, sound=True)
+#p,time = simulation(dur=1,nb_mode=2, fs=16000, gamma=0.42, zeta=0.3, L=60e-2,c=340,rc=2e-2,fig=True, sound=True)
+
+#print(len(p))
+#print(len(time))
