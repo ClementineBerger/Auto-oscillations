@@ -16,11 +16,11 @@ import tempfile
 
 #------------------------------------------------Contrôle
 
-gamma = 0.85
-zeta = 0.5
+gamma = 0.6
+zeta = 0.1
 #------------------------------------------------Paramètres d'entrée
 
-nb_mode=3;          #Nombre de modes à modéliser
+nb_mode=6          #Nombre de modes à modéliser
 dur=3;              #Durée de l'enregistrement à produire en secondes 
 W = 3e-2            #Largeur de la bouche
 H = 2e-3            #Longueur de la bouche
@@ -35,7 +35,7 @@ pM = 0.1            #Pression de plaquage statique
 #------------------------------------------Admittances
 Y_m=np.ones(nb_mode)*1 /1233.36096998528    #Initialisation de toutes les admittances à une valeur par défaut
 Y_m[0] = 1 /1233.36096998528                #Admittance au premier mode
-Y_m[1] = 1 /1233.36096998528                #Admittance au deuxième mode
+#Y_m[1] = 1 /1233.36096998528                #Admittance au deuxième mode
 #Y_m[2] = 1 /1233.36096998528
 
 #------------------------------------------Fréquences
@@ -87,30 +87,30 @@ Y_mbis[1::2]=Y_m
 def RK1(X,args):                    #Ordre 1
     dt=1/fs
     x2=np.zeros(fs*dur)
-    x2[0]=X[0]
+    x2[0]=sum(impair*X)
     for i in range(fs*dur-1):
         Xs=[x*dt for x in funtion(X,args)]
         X=np.add(X,Xs)
-        x2[i+1]=X[0]     
+        x2[i+1]=sum(impair*X)    
     return x2
 
 def RK2(X,args):                    #Ordre 2
     dt=1/fs
     x2=np.zeros(fs*dur)
-    x2[0]=X[0]
+    x2[0]=sum(impair*X)
     for i in range(fs*dur-1):
         Xp=[x*dt/2 for x in funtion(X,args)]
         #print(Xp)
         Xs=[x*dt for x in funtion(np.add(X,Xp),args)]
         X=np.add(X,Xs)
         #print(Xs)
-        x2[i+1]=X[0]
+        x2[i+1]=sum(impair*X)
     return x2
 
 def RK4(X,args):                    #Ordre 4
     dt=1/fs
     x2=np.zeros(fs*dur)
-    x2[0]=X[0]+X[2]
+    x2[0]=sum(impair*X)
     for i in range(fs*dur-1):
         k1=funtion(X,args)
         
