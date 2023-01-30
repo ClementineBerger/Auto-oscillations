@@ -16,12 +16,12 @@ import tempfile
 
 #------------------------------------------------Contrôle
 
-gamma = 0.8
+gamma = 0.6
 zeta = 0.2
-nb_mode=1          #Nombre de modes à modéliser
+nb_mode=2           #Nombre de modes à modéliser
 dur=3;              #Durée de l'enregistrement à produire en secondes 
 fs = 44100          #Fréquence d'échantillonnage
-L = 60e-2          #longueur clarinette
+L = 60e-2           #longueur clarinette
 c = 343             #Vitesse son
 rc = 3e-2           #rayon de la clarinette
 
@@ -168,7 +168,7 @@ def simulation(dur,nb_mode, fe, gamma, zeta, L,c,rc,fig=False, sound=False):
     #------------------------------------------------Variables calculées
     omega=f*2*np.pi                  #Conversion freq/puls  
     F=2*c/L*np.arange(1,nb_mode+1)                          #Coefficients modaux
-    time = np.linspace(0,3,fs*3)                            #Vecteur temps
+    time = np.linspace(0,dur,fs*dur)                            #Vecteur temps
 
     
     A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)            #Paramètres pour l'équation du modèle
