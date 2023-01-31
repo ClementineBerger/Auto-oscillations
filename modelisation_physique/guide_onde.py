@@ -36,6 +36,20 @@ def retardT(L,c):
     '''
     return 2*L/c
 
+def coeffs(gamma,zeta):
+    '''Calcule les coefficients de la fonction de
+    couplage F linéarisée
+    F(p) = F0 + Ap + Bp**2 + Cp**3
+    '''
+    if gamma == 0:
+        return 0, 0, 0, 0
+    else :
+        F0 = zeta*(1-gamma)*np.sqrt(gamma)
+        A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)
+        B = -zeta*(3*gamma+1)/8/gamma**(3/2)
+        C = -zeta*(gamma+1)/16/gamma**(5/2)
+    return F0,A,B,C
+
 def F(list_p, gamma, zeta):
     '''
     Renvoit le débit u suivant la pression p
@@ -93,14 +107,45 @@ def convolution(ind_tau,reflex_list,signal_list):
     '''
     
     x1 = reflex_list[0:ind_tau+1]
-    ind_nonzero = x1 != 0
     x2 = np.flipud(signal_list[0:ind_tau+1])
     
-    integrate = intgr.trapz(y=x1[ind_nonzero]*x2[ind_nonzero])  
+    integrate = intgr.trapz(y=x1*x2)  
+    #integrate = intgr.trapz(reflex_list*np.flipud(signal_list))
     
     return integrate
 
-def reflexion(T,frac_T,fe,Nsim,type):
+def convolution_triangle(ind_tau,T,fe,frac_T,reflex_list,signal_list):
+    '''
+    Calcul de la convolution entre le signal p + u et la fonction de réflexion 
+    (aux temps passés) avec une intégration par la méthode des trapèzes
+    
+    ind_tau = indice du temps de calcul
+    reflex_list = liste des coefficients de réflexion dans le temps
+    signal_list = liste p + u 
+    
+    (plus rapide que scipy...)
+    '''
+    
+    indT = int(T*fe)
+    
+    delta_ind = indT//frac_T
+    
+    if ind_tau <= indT - delta_ind :
+        return 0
+    
+    elif ind_tau <= indT +delta_ind :
+        x1 = reflex_list[indT-delta_ind:ind_tau+1]
+        x2 = np.flipud(signal_list[0:ind_tau-(indT-delta_ind)+1])
+    
+    else : 
+        x1 = reflex_list[indT-delta_ind:indT+delta_ind+1]
+        x2 = np.flipud(signal_list[ind_tau-(indT+delta_ind):ind_tau-(indT-delta_ind)+1])
+    
+    integrate = intgr.trapz(y=x1*x2)  
+    
+    return integrate
+
+def reflexion(T,frac_T,rate_gauss,fe,Nsim,type):
     '''
     Calcule la liste des coefficients de réflexion pour plusieurs formes de fonction de réflexion
     
@@ -131,9 +176,18 @@ def reflexion(T,frac_T,fe,Nsim,type):
 
         reflex_list = -reflex_list/aire 
         
+    elif type == 'gauss':
+        demi_largeur = rate_gauss*T
+        sigma = demi_largeur/np.sqrt(2*np.log(2))
+        b = 1/(2*(sigma**2))
+        a = 1/(sigma*np.sqrt(2*np.pi))    ### à revoir, le fait que l'aire de r doit être égale à 1
+        tps = np.linspace(0,Nsim/fe,Nsim)
+        reflex_list = -np.exp(-b*((tps-T)**2))
+        reflex_list /= -np.sum(reflex_list)
+                    
     return reflex_list
 
-def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10 ,fig=False, sound=False):
+def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10, rate_gauss = 0.4,fig=False, sound=False):
     '''
     Renvoit la pression p et le débit u (adimensionnés) simulés avec
     les paramètres gamma, zeta :
@@ -142,8 +196,9 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10 ,fig=Fal
     fe : fréquence d'échantillonnage de la simulation en Hz
     gamma : contrôle de la pression de bouche
     zeta : contrôle anche
-    type_reflection : type de réflexion au bout du guide, 'dirac' ou 'triangle'
+    type_reflection : type de réflexion au bout du guide, 'dirac', 'triangle' ou 'gauss'
     frac_T : seulement pour le type 'triangle', définition de la demi-largeur du triangle T/frac_T
+    rate_gauss : demi-largeur à mi-hauteur (typiquement entre 0.05 et 0.4)
     L : longueur du cylindre
     c : célérité des ondes
     '''
@@ -152,13 +207,15 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10 ,fig=Fal
     T = retardT(L,c)
     indT = int(T*fe)
     
+    #F0, A, B, C = coeffs(gamma, zeta)
+    
     time = (np.arange(int(t_max * fe)) / fe)  # temps de simulation
     Nsim = len(time)
     
     p = np.zeros(Nsim)
     u = np.zeros(Nsim)
     
-    reflex_list = reflexion(T,frac_T,fe,Nsim,type=type_reflection)
+    reflex_list = reflexion(T,frac_T,rate_gauss,fe,Nsim,type=type_reflection)
     
     ######## SIMULATION
     
@@ -177,14 +234,33 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10 ,fig=Fal
             i_act = i
             p[j] = tab_p[i]
             u[j] = tab_F[i]
+            #disc = (A-1)**2 -4*B*(F0+ph)
+            #p_fixe = (1-A-np.sqrt(disc))/(2*B)
+            #p_fixe = (ph+F0)/(1-A)
+            #p[j] = p_fixe
+            #u[j] = F(np.array([p_fixe]),gamma,zeta)
     
-    else :
+    elif type_reflection=='triangle':
+        for j in range(Nsim): 
+            ph = convolution_triangle(ind_tau=j,T=T,fe=fe,frac_T=frac_T,reflex_list = reflex_list, signal_list = p + u)
+            i = find_zero(solvF-ph,i_act)
+            i_act = i
+            p[j] = tab_p[i]
+            u[j] = tab_F[i]
+            #p_fixe = (ph+F0)/(1-A)
+            #p[j] = p_fixe
+            #u[j] = F(np.array([p_fixe]),gamma,zeta)
+            
+    elif type_reflection=="gauss":
         for j in range(Nsim): 
             ph = convolution(ind_tau=j,reflex_list = reflex_list, signal_list = p + u)
             i = find_zero(solvF-ph,i_act)
             i_act = i
             p[j] = tab_p[i]
             u[j] = tab_F[i]
+            #p_fixe = (ph+F0)/(1-A)
+            #p[j] = p_fixe
+            #u[j] = F(np.array([p_fixe]),gamma,zeta)
         
     if fig :
         plt.figure(figsize=(10,5))
