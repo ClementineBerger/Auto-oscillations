@@ -91,51 +91,26 @@ def amplitude(pression):
     MIN = np.min(pression[nt//2:])
     return MAX-MIN
 
-def frequence(pression):
-    if amplitude(pression)==0: return 0
-    nt = len(pression)
-    fourier = np.fft.fft(pression[nt//2:])
-    return np.argmax(fourier[:nt//5])
-
 import matplotlib.pyplot as plt
 
 r_dt = np.array([0]*20+[1])
-#r_dt = np.exp(-(np.linspace(0,40,20)-20)**2/20)
-r_dt[0]=0
 r_dt = -1*r_dt/np.sum(r_dt)
-m_dt2 = 20
 nt = 500
 n_att = 30
 
-for m_dt2 in [0,0.1,0.5,1,2,5,8,10]:
-    ampl = []
-    freq = []
-    for p in range(0,100):
-        #P_m = p/10*np.ones(nt)
-        #P_m[:n_att] = np.linspace(0,p/10,n_att)
-        #P_m = P_m + np.random.random(nt)*0.1
-        pression,_ = embouchure(p/100, 1, 0.95*r_dt, nt)
-        ampl.append(frequence(pression))
-        #freq.append(frequence(pression))
-        #plt.plot(range(nt),pression,label="p_m ="+str(p/10))
-    plt.plot(range(100),ampl,label="m = "+str(m_dt2))
-plt.legend()
-plt.xlabel("pression dans la bouche")
-plt.ylabel("frequence note")
-plt.title("Bifurcation en fréquence pour différents termes d'inertie")
-plt.savefig("frequence.pdf", transparent=True,bbox_inches = "tight")
-plt.savefig("frequence.png", transparent=True,bbox_inches = "tight")
-plt.show()
+p = 6
 
-"""
+for m_dt2 in [0,1,10,100,1000]:
+    P_m = p/10*np.ones(nt)
+    P_m[:n_att] = np.linspace(0,p/10,n_att)
+    #P_m = P_m + np.random.random(nt)*0.1
+    pression,_ = embouchure(0.6, 1, 0.95*r_dt, nt)
+    plt.plot(range(nt),pression,label=str(m_dt2))
 plt.xlabel("temps")
 plt.ylabel("pression")
-plt.title("masse = 20")
+plt.title("Différentes inerties")
 plt.legend()
-plt.savefig("masse20.pdf", transparent=True,bbox_inches = "tight")
-
 plt.show()
-"""
 """
 ampl = []
 pres = []
