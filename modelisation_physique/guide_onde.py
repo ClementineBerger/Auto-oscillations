@@ -3,6 +3,8 @@
 
 Implémentation guide d'onde suivant l'article de McIntyre : à l'avantage d'être plus modulable
 avec la possibilité de changer de fonction de réflexion au bout du guide d'onde
+
+Ce script fonctionne pour une clarinette de longueur L et pour une corde pincée en son MILIEU
 """
 
 
@@ -52,7 +54,7 @@ def coeffs(gamma, zeta):
     return F0, A, B, C
 
 
-def F(list_p, gamma, zeta):
+def Fclarinette(list_p, gamma, zeta):
     """
     Renvoit le débit u suivant la pression p
     suivant la relation u = F(p)
@@ -65,7 +67,7 @@ def F(list_p, gamma, zeta):
     return u
 
 
-def tableau_F(pmin, pmax, nb_pts, gamma, zeta):
+def tableau_Fclarinette(pmin, pmax, nb_pts, gamma, zeta):
     """
     Rempli un tableau F pour faire la recherche de 0
 
@@ -74,10 +76,9 @@ def tableau_F(pmin, pmax, nb_pts, gamma, zeta):
     nb_pts = nombre de points de calculs
     gamma =
     zeta =
-
     """
     tab_p = np.linspace(pmin, pmax, nb_pts)
-    tab_F = F(tab_p, gamma, zeta)
+    tab_F = Fclarinette(tab_p, gamma, zeta)
 
     return tab_p, tab_F
 
@@ -160,7 +161,7 @@ def convolution_triangle(ind_tau, T, fe, frac_T, reflex_list, signal_list):
     return integrate
 
 
-def reflexion(T, frac_T, rate_gauss, fe, Nsim, type):
+def reflexion(T, pertes_dirac,frac_T, rate_gauss, fe, Nsim, type):
     """
     Calcule la liste des coefficients de réflexion pour plusieurs formes de fonction de réflexion
 
@@ -176,14 +177,10 @@ def reflexion(T, frac_T, rate_gauss, fe, Nsim, type):
     
     if type == 'dirac' :
         reflex_list = np.zeros(Nsim)
-        reflex_list[indT] = -1
-    
-    elif type == 'triangle' : #centré en T
-        reflex_list = np.zeros(Nsim)
-        delta_ind = indT//frac_T
-        pente = 1/delta_ind
+        reflex_list[indT] = -pertes_dirac
 
     elif type == "triangle":  # centré en T
+        reflex_list = np.zeros(Nsim)
         delta_ind = indT // frac_T
         pente = 1 / delta_ind
 
@@ -194,7 +191,9 @@ def reflexion(T, frac_T, rate_gauss, fe, Nsim, type):
             reflex_list[i] = reflex_list[indT] - (i - indT) * pente
 
         aire = np.sum(reflex_list)
-
+        #aire = intgr.trapz(y=reflex_list,dx=1/fe)
+        #aire = np.max(abs(reflex_list))
+        
         reflex_list = -reflex_list/aire 
         
     elif type == 'gauss':
@@ -204,24 +203,15 @@ def reflexion(T, frac_T, rate_gauss, fe, Nsim, type):
         a = 1/(sigma*np.sqrt(2*np.pi))    ### à revoir, le fait que l'aire de r doit être égale à 1
         tps = np.linspace(0,Nsim/fe,Nsim)
         reflex_list = -np.exp(-b*((tps-T)**2))
-        reflex_list /= np.sum(abs(reflex_list))
+        #aire = intgr.trapz(y=reflex_list,dx=1/fe)
+        #aire = np.max(abs(reflex_list))
+        aire = np.sum(abs(reflex_list))
+        reflex_list /= abs(aire)
                     
     return reflex_list
 
 
-def simulation(
-    t_max,
-    sample_rate,
-    gamma,
-    zeta,
-    type_reflection,
-    L,
-    c,
-    frac_T=10,
-    rate_gauss=0.4,
-    fig=False,
-    sound=False,
-):
+def clarinette(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,frac_T=10,rate_gauss=0.4,fig=False,sound=False):
     """
     Renvoit la pression p et le débit u (adimensionnés) simulés avec
     les paramètres gamma, zeta :
@@ -250,12 +240,12 @@ def simulation(
     u = np.zeros(Nsim)
 
     reflex_list = reflexion(
-        T, frac_T, rate_gauss, sample_rate, Nsim, type=type_reflection
+        T, pertes_dirac,frac_T, rate_gauss, sample_rate, Nsim, type=type_reflection
     )
 
     ######## SIMULATION
 
-    tab_p, tab_F = tableau_F(-5, 5, 2000, gamma, zeta)
+    tab_p, tab_F = tableau_Fclarinette(-5, 5, 2000, gamma, zeta)
     solvF = tab_p - tab_F
 
     i_act = np.argmin(np.abs(tab_p - gamma)) + 1
@@ -278,14 +268,8 @@ def simulation(
 
     elif type_reflection == "triangle":
         for j in range(Nsim):
-            ph = convolution_triangle(
-                ind_tau=j,
-                T=T,
-                fe=sample_rate,
-                frac_T=frac_T,
-                reflex_list=reflex_list,
-                signal_list=p + u,
-            )
+            ph = convolution_triangle(ind_tau=j,T=T,fe=sample_rate,frac_T=frac_T,reflex_list=reflex_list,signal_list=p + u)
+            #ph = convolution(ind_tau=j,reflex_list = reflex_list, signal_list = p + u)
             i = find_zero(solvF - ph, i_act)
             i_act = i
             p[j] = tab_p[i]
@@ -320,3 +304,129 @@ def simulation(
     #    display(Audio(p,rate=fe))
 
     return p, u
+
+
+
+####### Instruments à cordes frottées
+
+def Fcordes(delta_v, v0, Fb,fig=False):
+    result = Fb*(delta_v/v0)/(1+(delta_v/v0)**2)
+    if fig:
+        plt.plot(delta_v, result)
+    return result
+
+def tableau_Fcordes(vmin, vmax, nb_pts, v0, Fb):
+    """
+    Rempli un tableau F pour faire la recherche de 0
+
+    vmin = borne inférieure de dv
+    vmax = borne supérieure de dv
+    nb_pts = nombre de points de calculs
+    """
+    tab_v = np.linspace(vmin, vmax, nb_pts)
+    tab_f = Fcordes(tab_v, v0, Fb)
+
+    return tab_v, tab_f
+
+def cordes(t_max,sample_rate,v0,Fb,type_reflection,L,c,pertes_dirac=1,frac_T=10,rate_gauss=0.4,fig=False,sound=False):
+    """
+    Renvoit la différence de vitesse dv et la force transverse f (adimensionnés) simulés avec
+    les paramètres gamma, zeta :
+
+    t_max : durée de la simulation en s
+    fe : fréquence d'échantillonnage de la simulation en Hz
+    gamma : contrôle de la pression de bouche
+    zeta : contrôle anche
+    type_reflection : type de réflexion au bout du guide, 'dirac', 'triangle' ou 'gauss'
+    frac_T : seulement pour le type 'triangle', définition de la demi-largeur du triangle T/frac_T
+    rate_gauss : demi-largeur à mi-hauteur (typiquement entre 0.05 et 0.4)
+    L : longueur du cylindre
+    c : célérité des ondes
+    """
+
+    # Initialisation des paramètres
+    T = retardT(L, c)
+    indT = int(T * sample_rate)
+
+    # F0, A, B, C = coeffs(gamma, zeta)
+
+    time = np.arange(int(t_max * sample_rate)) / sample_rate  # temps de simulation
+    Nsim = len(time)
+
+    dv = np.zeros(Nsim)
+    f = np.zeros(Nsim)
+
+    reflex_list = reflexion(
+        T, pertes_dirac,frac_T, rate_gauss, sample_rate, Nsim, type=type_reflection
+    )
+
+    ######## SIMULATION
+
+    tab_v, tab_f = tableau_Fcordes(0, 100, 2000, v0, Fb)
+    solvF = tab_v - tab_f
+
+    i_act = np.argmin(solvF) + len(solvF)//3
+
+    if type_reflection == "dirac":
+        for j in range(Nsim):
+            if j < indT:
+                vh = -(dv[0] + f[0])
+            else:
+                vh = -(dv[j - indT] + f[j - indT])
+            #plt.plot(solvF - vh)
+            #break
+            i = find_zero(solvF - vh, i_act)
+            i_act = i
+            #print(i_act)
+            dv[j] = tab_v[i]
+            f[j] = tab_f[i]
+            # disc = (A-1)**2 -4*B*(F0+ph)
+            # p_fixe = (1-A-np.sqrt(disc))/(2*B)
+            # p_fixe = (ph+F0)/(1-A)
+            # p[j] = p_fixe
+            # u[j] = F(np.array([p_fixe]),gamma,zeta)
+
+    elif type_reflection == "triangle":
+        for j in range(Nsim):
+            ph = convolution_triangle(
+                ind_tau=j,
+                T=T,
+                fe=sample_rate,
+                frac_T=frac_T,
+                reflex_list=reflex_list,
+                signal_list=dv + f,
+            )
+            i = find_zero(solvF - vh, i_act)
+            i_act = i
+            dv[j] = tab_v[i]
+            f[j] = tab_f[i]
+            #p_fixe = (ph+F0)/(1-A)
+            #p[j] = p_fixe
+            #u[j] = F(np.array([p_fixe]),gamma,zeta)
+            
+    elif type_reflection=="gauss":
+        for j in range(Nsim): 
+            ph = convolution(ind_tau=j,reflex_list = reflex_list, signal_list = dv + f)
+            #print(ph)
+            i = find_zero(solvF-vh,i_act)
+            i_act = i
+            dv[j] = tab_v[i]
+            f[j] = tab_f[i]
+            # p_fixe = (ph+F0)/(1-A)
+            # p[j] = p_fixe
+            # u[j] = F(np.array([p_fixe]),gamma,zeta)
+
+    if fig:
+        plt.figure(figsize=(10, 5))
+        plt.plot(time, dv)
+        plt.xlim(0, 0.2)
+        plt.ylim(-1.1, 1.1)
+        plt.tight_layout()
+        plt.xlabel("Temps en s", size=14)
+        plt.ylabel("Amplitude", size=14)
+        plt.show()
+
+    # if sound :
+    #    display(Audio(p,rate=fe))
+
+    return dv, f

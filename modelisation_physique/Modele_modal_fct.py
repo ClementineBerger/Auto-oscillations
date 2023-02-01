@@ -63,7 +63,7 @@ def RK2(X, dur, nb_mode, fs, args, vecs):  # Ordre 2
     )  # Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
 
     x2[0] = sum(impair * X)
-    for i in range(fs * dur - 1):
+    for i in range(int(fs * dur) - 1):
         Xp = [x * dt / 2 for x in func(X, dur, nb_mode, fs, args, vecs)]
         # print(Xp)
         Xs = [x * dt for x in func(np.add(X, Xp), dur, nb_mode, fs, args, vecs)]
@@ -78,7 +78,7 @@ def RK4(X, dur, nb_mode, fs, args, vecs):  # Ordre 4
     x2 = np.zeros(int(fs * dur))
     (Fbis, omegabis, Y_mbis, pair, impair, x_out) = vecs
     x2[0] = sum(impair * X)
-    for i in range(fs * dur - 1):
+    for i in range(int(fs * dur) - 1):
         k1 = func(X, dur, nb_mode, fs, args, vecs)
 
         k1x = [x * dt / 2 for x in k1]
