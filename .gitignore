@@ -1,3 +1,6 @@
 __MACOSX
 __pycache__
 .vscode
+.DS_Store
+.ipynb_checkpoints
+*.png
