@@ -153,16 +153,18 @@ def reflexion(T,frac_T,rate_gauss,fe,Nsim,type):
     (si possible 'exponentiel' mais nécessite de revoir un peu le code...)
         - dirac : r(t) = -delta(t-T)
         - triangle : triangle négatif centré en T (plus il est court, plus on se rapproche du dirac et des créneaux)
+        - gaussienne : -a*exp(-b(t-T)**2)
     '''
     
     indT = int(T*fe)   #indice du moment T de la réflexion au bout du guide
     
-    reflex_list = np.zeros(Nsim)
     
     if type == 'dirac' :
+        reflex_list = np.zeros(Nsim)
         reflex_list[indT] = -1
     
     elif type == 'triangle' : #centré en T
+        reflex_list = np.zeros(Nsim)
         delta_ind = indT//frac_T
         pente = 1/delta_ind
 
@@ -183,7 +185,7 @@ def reflexion(T,frac_T,rate_gauss,fe,Nsim,type):
         a = 1/(sigma*np.sqrt(2*np.pi))    ### à revoir, le fait que l'aire de r doit être égale à 1
         tps = np.linspace(0,Nsim/fe,Nsim)
         reflex_list = -np.exp(-b*((tps-T)**2))
-        reflex_list /= -np.sum(reflex_list)
+        reflex_list /= np.sum(abs(reflex_list))
                     
     return reflex_list
 
@@ -254,6 +256,7 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10, rate_ga
     elif type_reflection=="gauss":
         for j in range(Nsim): 
             ph = convolution(ind_tau=j,reflex_list = reflex_list, signal_list = p + u)
+            #print(ph)
             i = find_zero(solvF-ph,i_act)
             i_act = i
             p[j] = tab_p[i]
