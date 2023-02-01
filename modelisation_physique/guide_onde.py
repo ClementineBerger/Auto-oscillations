@@ -14,7 +14,7 @@ import scipy.signal as sig
 import scipy.integrate as intgr
 from IPython.display import Audio
 
-### Paramètres utilisateurs 
+### Paramètres utilisateurs
 
 # c = célérité des ondes sonores
 # L = longueur du guide d'onde
@@ -24,137 +24,152 @@ from IPython.display import Audio
 # frac_T = pour le type triangle -> défini la demi largeur du triangle égale à T/frac_T
 
 
+### Définition des fonctions
 
-### Définition des fonctions 
 
-def retardT(L,c):
-    '''
+def retardT(L, c):
+    """
     Renvoie T le retard accumulé par l'onde
     en un aller-retour
     L : longueur du guide cylindrique
     c : célérité des ondes dans l'air
-    '''
-    return 2*L/c
+    """
+    return 2 * L / c
 
-def coeffs(gamma,zeta):
-    '''Calcule les coefficients de la fonction de
+
+def coeffs(gamma, zeta):
+    """Calcule les coefficients de la fonction de
     couplage F linéarisée
     F(p) = F0 + Ap + Bp**2 + Cp**3
-    '''
+    """
     if gamma == 0:
         return 0, 0, 0, 0
-    else :
-        F0 = zeta*(1-gamma)*np.sqrt(gamma)
-        A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)
-        B = -zeta*(3*gamma+1)/8/gamma**(3/2)
-        C = -zeta*(gamma+1)/16/gamma**(5/2)
-    return F0,A,B,C
+    else:
+        F0 = zeta * (1 - gamma) * np.sqrt(gamma)
+        A = zeta * (3 * gamma - 1) / 2 / np.sqrt(gamma)
+        B = -zeta * (3 * gamma + 1) / 8 / gamma ** (3 / 2)
+        C = -zeta * (gamma + 1) / 16 / gamma ** (5 / 2)
+    return F0, A, B, C
+
 
 def F(list_p, gamma, zeta):
-    '''
+    """
     Renvoit le débit u suivant la pression p
     suivant la relation u = F(p)
-    '''
+    """
     if gamma == 0:
         return np.zeros(len(list_p))
-    else :
+    else:
         valid = (gamma - list_p < 1) & (gamma - list_p > 0)
         u = zeta * (1 - gamma + list_p) * np.nan_to_num(np.sqrt(gamma - list_p)) * valid
     return u
-    
-def tableau_F(pmin,pmax,nb_pts,gamma,zeta):
-    '''
-    Rempli un tableau F pour faire la recherche de 0 
-    
+
+
+def tableau_F(pmin, pmax, nb_pts, gamma, zeta):
+    """
+    Rempli un tableau F pour faire la recherche de 0
+
     pmin = borne inférieure de p
     pmax = borne supérieure de p
     nb_pts = nombre de points de calculs
-    gamma = 
+    gamma =
     zeta =
-    
-    '''
-    tab_p = np.linspace(pmin,pmax,nb_pts)
+
+    """
+    tab_p = np.linspace(pmin, pmax, nb_pts)
     tab_F = F(tab_p, gamma, zeta)
-    
+
     return tab_p, tab_F
+
 
 def find_zero(tableau, i):
     """
     Recherche le point d'annulation de tableau le plus proche possible de i
-    
+
     tableau = tableau des valeurs de la fonction F sur l'intervalle souhaité
-    i =  
+    i =
     """
     l = len(tableau)
-    changement_signe = tableau[0:l-1]*tableau[1:l] # il y a un point d'annulation entre tableau[j] et tableau[j+1] ssi tableau[j]*tableau[j+1] <= 0
-    negatif = changement_signe <= 0 # True aux indices où il y a un changement de signe
-    tab_i0 = (np.arange(l-1))[negatif] # indices auxquels il y a un changement de signe
-    if len(tab_i0)==0:
+    changement_signe = (
+        tableau[0 : l - 1] * tableau[1:l]
+    )  # il y a un point d'annulation entre tableau[j] et tableau[j+1] ssi tableau[j]*tableau[j+1] <= 0
+    negatif = changement_signe <= 0  # True aux indices où il y a un changement de signe
+    tab_i0 = (np.arange(l - 1))[
+        negatif
+    ]  # indices auxquels il y a un changement de signe
+    if len(tab_i0) == 0:
         return np.argmin(np.abs(tableau))
-    i0 = np.argmin(np.abs(tab_i0-i)) # indice de l'indice le plus proche de i dans tab_i0
+    i0 = np.argmin(
+        np.abs(tab_i0 - i)
+    )  # indice de l'indice le plus proche de i dans tab_i0
     return tab_i0[i0]
 
-def convolution(ind_tau,reflex_list,signal_list):
-    '''
-    Calcul de la convolution entre le signal p + u et la fonction de réflexion 
+
+def convolution(ind_tau, reflex_list, signal_list):
+    """
+    Calcul de la convolution entre le signal p + u et la fonction de réflexion
     (aux temps passés) avec une intégration par la méthode des trapèzes
-    
+
     ind_tau = indice du temps de calcul
     reflex_list = liste des coefficients de réflexion dans le temps
-    signal_list = liste p + u 
-    
+    signal_list = liste p + u
+
     (plus rapide que scipy...)
-    '''
-    
-    x1 = reflex_list[0:ind_tau+1]
-    x2 = np.flipud(signal_list[0:ind_tau+1])
-    
-    integrate = intgr.trapz(y=x1*x2)  
-    #integrate = intgr.trapz(reflex_list*np.flipud(signal_list))
-    
+    """
+
+    x1 = reflex_list[0 : ind_tau + 1]
+    x2 = np.flipud(signal_list[0 : ind_tau + 1])
+
+    integrate = intgr.trapz(y=x1 * x2)
+    # integrate = intgr.trapz(reflex_list*np.flipud(signal_list))
+
     return integrate
 
-def convolution_triangle(ind_tau,T,fe,frac_T,reflex_list,signal_list):
-    '''
-    Calcul de la convolution entre le signal p + u et la fonction de réflexion 
+
+def convolution_triangle(ind_tau, T, fe, frac_T, reflex_list, signal_list):
+    """
+    Calcul de la convolution entre le signal p + u et la fonction de réflexion
     (aux temps passés) avec une intégration par la méthode des trapèzes
-    
+
     ind_tau = indice du temps de calcul
     reflex_list = liste des coefficients de réflexion dans le temps
-    signal_list = liste p + u 
-    
+    signal_list = liste p + u
+
     (plus rapide que scipy...)
-    '''
-    
-    indT = int(T*fe)
-    
-    delta_ind = indT//frac_T
-    
-    if ind_tau <= indT - delta_ind :
+    """
+
+    indT = int(T * fe)
+
+    delta_ind = indT // frac_T
+
+    if ind_tau <= indT - delta_ind:
         return 0
-    
-    elif ind_tau <= indT +delta_ind :
-        x1 = reflex_list[indT-delta_ind:ind_tau+1]
-        x2 = np.flipud(signal_list[0:ind_tau-(indT-delta_ind)+1])
-    
-    else : 
-        x1 = reflex_list[indT-delta_ind:indT+delta_ind+1]
-        x2 = np.flipud(signal_list[ind_tau-(indT+delta_ind):ind_tau-(indT-delta_ind)+1])
-    
-    integrate = intgr.trapz(y=x1*x2)  
-    
+
+    elif ind_tau <= indT + delta_ind:
+        x1 = reflex_list[indT - delta_ind : ind_tau + 1]
+        x2 = np.flipud(signal_list[0 : ind_tau - (indT - delta_ind) + 1])
+
+    else:
+        x1 = reflex_list[indT - delta_ind : indT + delta_ind + 1]
+        x2 = np.flipud(
+            signal_list[ind_tau - (indT + delta_ind) : ind_tau - (indT - delta_ind) + 1]
+        )
+
+    integrate = intgr.trapz(y=x1 * x2)
+
     return integrate
 
-def reflexion(T,frac_T,rate_gauss,fe,Nsim,type):
-    '''
+
+def reflexion(T, frac_T, rate_gauss, fe, Nsim, type):
+    """
     Calcule la liste des coefficients de réflexion pour plusieurs formes de fonction de réflexion
-    
-    type = str donnant le type de réflexion choisi ; 'dirac', 'triangle' 
+
+    type = str donnant le type de réflexion choisi ; 'dirac', 'triangle'
     (si possible 'exponentiel' mais nécessite de revoir un peu le code...)
         - dirac : r(t) = -delta(t-T)
         - triangle : triangle négatif centré en T (plus il est court, plus on se rapproche du dirac et des créneaux)
         - gaussienne : -a*exp(-b(t-T)**2)
-    '''
+    """
     
     indT = int(T*fe)   #indice du moment T de la réflexion au bout du guide
     
@@ -168,12 +183,16 @@ def reflexion(T,frac_T,rate_gauss,fe,Nsim,type):
         delta_ind = indT//frac_T
         pente = 1/delta_ind
 
-        for i in range(indT-delta_ind, indT+1):
-            reflex_list[i] = (i-indT+delta_ind)*pente
+    elif type == "triangle":  # centré en T
+        delta_ind = indT // frac_T
+        pente = 1 / delta_ind
 
-        for i in range(indT+1, indT+delta_ind+1):
-            reflex_list[i] = reflex_list[indT] - (i-indT)*pente
-            
+        for i in range(indT - delta_ind, indT + 1):
+            reflex_list[i] = (i - indT + delta_ind) * pente
+
+        for i in range(indT + 1, indT + delta_ind + 1):
+            reflex_list[i] = reflex_list[indT] - (i - indT) * pente
+
         aire = np.sum(reflex_list)
 
         reflex_list = -reflex_list/aire 
@@ -189,11 +208,24 @@ def reflexion(T,frac_T,rate_gauss,fe,Nsim,type):
                     
     return reflex_list
 
-def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10, rate_gauss = 0.4,fig=False, sound=False):
-    '''
+
+def simulation(
+    t_max,
+    sample_rate,
+    gamma,
+    zeta,
+    type_reflection,
+    L,
+    c,
+    frac_T=10,
+    rate_gauss=0.4,
+    fig=False,
+    sound=False,
+):
+    """
     Renvoit la pression p et le débit u (adimensionnés) simulés avec
     les paramètres gamma, zeta :
-    
+
     t_max : durée de la simulation en s
     fe : fréquence d'échantillonnage de la simulation en Hz
     gamma : contrôle de la pression de bouche
@@ -203,49 +235,58 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10, rate_ga
     rate_gauss : demi-largeur à mi-hauteur (typiquement entre 0.05 et 0.4)
     L : longueur du cylindre
     c : célérité des ondes
-    '''
-    
+    """
+
     # Initialisation des paramètres
-    T = retardT(L,c)
-    indT = int(T*fe)
-    
-    #F0, A, B, C = coeffs(gamma, zeta)
-    
-    time = (np.arange(int(t_max * fe)) / fe)  # temps de simulation
+    T = retardT(L, c)
+    indT = int(T * sample_rate)
+
+    # F0, A, B, C = coeffs(gamma, zeta)
+
+    time = np.arange(int(t_max * sample_rate)) / sample_rate  # temps de simulation
     Nsim = len(time)
-    
+
     p = np.zeros(Nsim)
     u = np.zeros(Nsim)
-    
-    reflex_list = reflexion(T,frac_T,rate_gauss,fe,Nsim,type=type_reflection)
-    
+
+    reflex_list = reflexion(
+        T, frac_T, rate_gauss, sample_rate, Nsim, type=type_reflection
+    )
+
     ######## SIMULATION
-    
-    tab_p, tab_F = tableau_F(-5,5,2000,gamma,zeta)
+
+    tab_p, tab_F = tableau_F(-5, 5, 2000, gamma, zeta)
     solvF = tab_p - tab_F
 
-    i_act = np.argmin(np.abs(tab_p-gamma)) + 1
-    
-    if type_reflection=='dirac':
-        for j in range(Nsim): 
-            if j < indT :
-                ph = -(p[0]+u[0])
-            else :
-                ph = -(p[j-indT]+u[j-indT])
-            i = find_zero(solvF-ph,i_act)
+    i_act = np.argmin(np.abs(tab_p - gamma)) + 1
+
+    if type_reflection == "dirac":
+        for j in range(Nsim):
+            if j < indT:
+                ph = -(p[0] + u[0])
+            else:
+                ph = -(p[j - indT] + u[j - indT])
+            i = find_zero(solvF - ph, i_act)
             i_act = i
             p[j] = tab_p[i]
             u[j] = tab_F[i]
-            #disc = (A-1)**2 -4*B*(F0+ph)
-            #p_fixe = (1-A-np.sqrt(disc))/(2*B)
-            #p_fixe = (ph+F0)/(1-A)
-            #p[j] = p_fixe
-            #u[j] = F(np.array([p_fixe]),gamma,zeta)
-    
-    elif type_reflection=='triangle':
-        for j in range(Nsim): 
-            ph = convolution_triangle(ind_tau=j,T=T,fe=fe,frac_T=frac_T,reflex_list = reflex_list, signal_list = p + u)
-            i = find_zero(solvF-ph,i_act)
+            # disc = (A-1)**2 -4*B*(F0+ph)
+            # p_fixe = (1-A-np.sqrt(disc))/(2*B)
+            # p_fixe = (ph+F0)/(1-A)
+            # p[j] = p_fixe
+            # u[j] = F(np.array([p_fixe]),gamma,zeta)
+
+    elif type_reflection == "triangle":
+        for j in range(Nsim):
+            ph = convolution_triangle(
+                ind_tau=j,
+                T=T,
+                fe=sample_rate,
+                frac_T=frac_T,
+                reflex_list=reflex_list,
+                signal_list=p + u,
+            )
+            i = find_zero(solvF - ph, i_act)
             i_act = i
             p[j] = tab_p[i]
             u[j] = tab_F[i]
@@ -261,21 +302,21 @@ def simulation(t_max, fe, gamma, zeta, type_reflection, L, c, frac_T=10, rate_ga
             i_act = i
             p[j] = tab_p[i]
             u[j] = tab_F[i]
-            #p_fixe = (ph+F0)/(1-A)
-            #p[j] = p_fixe
-            #u[j] = F(np.array([p_fixe]),gamma,zeta)
-        
-    if fig :
-        plt.figure(figsize=(10,5))
-        plt.plot(time,p)
-        plt.xlim(0,0.2)
+            # p_fixe = (ph+F0)/(1-A)
+            # p[j] = p_fixe
+            # u[j] = F(np.array([p_fixe]),gamma,zeta)
+
+    if fig:
+        plt.figure(figsize=(10, 5))
+        plt.plot(time, p)
+        plt.xlim(0, 0.2)
         plt.ylim(-1.1, 1.1)
         plt.tight_layout()
-        plt.xlabel("Temps en s",size=14)
-        plt.ylabel("Amplitude",size=14)
+        plt.xlabel("Temps en s", size=14)
+        plt.ylabel("Amplitude", size=14)
         plt.show()
-        
-    #if sound :
+
+    # if sound :
     #    display(Audio(p,rate=fe))
-        
+
     return p, u
