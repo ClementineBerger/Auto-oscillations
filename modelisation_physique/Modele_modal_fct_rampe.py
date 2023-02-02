@@ -39,49 +39,24 @@ rc = 3e-2           #rayon de la clarinette
 
 #---------------------------------------Méthodes de Runge-Kutta 
 
-def RK1(X,dur,nb_mode, fs,args,vecs):                    #Ordre 1
-    dt=1/fs
-    impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
-    
-    x2=np.zeros(int(fs*dur))
-    x2[0]=sum(impair*X)
-    for i in range(fs*dur-1):
-        Xs=[x*dt for x in func(X,dur,nb_mode, fs,args,vecs)]
-        X=np.add(X,Xs)
-        x2[i+1]=sum(impair*X)    
-    return x2
-
-def RK2(X,dur,nb_mode, fs,args,vecs):                    #Ordre 2
-    dt=1/fs
-    x2=np.zeros(int(fs*dur))
-    impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
-    
-    x2[0]=sum(impair*X)
-    for i in range(fs*dur-1):
-        Xp=[x*dt/2 for x in func(X,dur,nb_mode, fs,args,vecs)]
-        #print(Xp)
-        Xs=[x*dt for x in func(np.add(X,Xp),dur,nb_mode, fs,args,vecs)]
-        X=np.add(X,Xs)
-        #print(Xs)
-        x2[i+1]=sum(impair*X)
-    return x2
-
 def RK4(X,dur,nb_mode, fs,args,vecs):                    #Ordre 4
     dt=1/fs
     x2=np.zeros(int(fs*dur))
     (Fbis,omegabis,Y_mbis,pair,impair,x_out)=vecs
+    (As, Bs, Cs,F,omega,Y_m)=args
     x2[0]=sum(impair*X)
     for i in range(int(fs*dur-1)):
-        k1=func(X,dur,nb_mode, fs,args,vecs)
+        args2=(As[i], Bs[i], Cs[i],F,omega,Y_m)
+        k1=func(X,dur,nb_mode, fs,args2,vecs)
         
         k1x=[x*dt/2 for x in k1]
-        k2=func(np.add(X,k1x),dur,nb_mode, fs,args,vecs)
+        k2=func(np.add(X,k1x),dur,nb_mode, fs,args2,vecs)
         
         k2x=[x*dt/2 for x in k2]
-        k3=func(np.add(X,k2x),dur,nb_mode, fs,args,vecs)
+        k3=func(np.add(X,k2x),dur,nb_mode, fs,args2,vecs)
         
         k3x=[x*dt for x in k3]
-        k4=func(np.add(X,k3x),dur,nb_mode, fs,args,vecs)
+        k4=func(np.add(X,k3x),dur,nb_mode, fs,args2,vecs)
         
         k2s=[x*2 for x in k2]
         k3s=[x*2 for x in k3]
@@ -98,7 +73,6 @@ def RK4(X,dur,nb_mode, fs,args,vecs):                    #Ordre 4
 def func(x,dur,nb_mode, fs,args,vecs):
     (A, B, C,F,omega,Y_m) = args
     (Fbis,omegabis,Y_mbis,pair,impair,x_out) =vecs
-
     commun=sum(x*pair)*(A+2*B*sum(x*impair)+3*C*sum(x*impair)**2)
     
     x_out=np.zeros(nb_mode*2)
@@ -143,14 +117,20 @@ def play(y,Fe=44100):
 #------------------------------------------------Fonction faisant tourner le modèle
 def simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=False, sound=False):
     
-    
+    global gammas
+    time = np.linspace(0,dur,int(fs*dur))                            #Vecteur temps
+    durete_rampe=2000 #Faire varier entre 20 (pente douce) et 2000 (pente raide)
+    gammas=np.arctan(np.linspace(0.1,durete_rampe,len(time)))*gamma/(np.arctan(durete_rampe))
+    #gammas=np.linspace(0.3,gamma,len(time))
+    #gammas=np.ones(len(time))*gamma
     #------------------------------------------Admittances
-    Y_m=np.ones(nb_mode)*1 /1233.36096998528    #Initialisation de toutes les admittances à une valeur par défaut
-    """
+    #Y_m=np.ones(nb_mode)*1 /1233.36096998528    #Initialisation de toutes les admittances à une valeur par défaut
+    Y_m=np.ones(nb_mode)*400
+    
     #Y_m[0] = 1 /1233.36096998528                #Admittance au premier mode ajustée à la main
-    #Y_m[1] = 1 /1233.36096998528                #Admittance au deuxième mode
+    #Y_m[1] = 1 /500000                #Admittance au deuxième mode
     #Y_m[2] = 1 /1233.36096998528
-    """
+    
     #------------------------------------------Fréquences
     global f
     f=np.zeros(nb_mode)                 #Initialisation générale fréquences des modes
@@ -170,14 +150,14 @@ def simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=False, sound=False):
     #------------------------------------------------Variables calculées
     omega=f*2*np.pi                  #Conversion freq/puls  
     F=2*c/L*np.arange(1,nb_mode+1)                          #Coefficients modaux
-    time = np.linspace(0,dur,int(fs*dur))                            #Vecteur temps
-
+    F[1]=F[0]*1.000
     
-    A = zeta*(3 * gamma - 1) / 2 /np.sqrt(gamma)            #Paramètres pour l'équation du modèle
-    B = -zeta*(3*gamma+1)/8/gamma**(3/2)
-    C = -zeta*(gamma +1)/16/gamma**(5/2)
     
-    args=(A, B, C,F,omega,Y_m)
+    As = zeta*(3 * gammas - 1) / 2 /np.sqrt(gammas)            #Paramètres pour l'équation du modèle
+    Bs = -zeta*(3*gammas+1)/8/gammas**(3/2)
+    Cs = -zeta*(gammas +1)/16/gammas**(5/2)
+    
+    args=(As, Bs, Cs,F,omega,Y_m)
     #--------------------------------Vecteurs utiles pour les calculs
     pair = np.arange(nb_mode*2)%2        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
     impair= (np.arange(nb_mode*2)+1)%2    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
@@ -209,7 +189,7 @@ def simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=False, sound=False):
         plt.plot(time, p, 'orange', linewidth = 2)
         plt.xlabel('time (s)')
         plt.ylabel('pressure')
-        plt.xlim(0,0.5)
+        #plt.xlim(0,0.5)
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         #plt.ylim(0,0.000000000001)
         plt.xlim()
@@ -221,7 +201,7 @@ def simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=False, sound=False):
     return p,time
 
 
-#p,time = simulation(dur=1,nb_mode=2, fs=16000, gamma=0.5, zeta=0.3, L=60e-2,c=340,rc=2e-2,fig=True, sound=True)
+p,time = simulation(dur=2,nb_mode=2, fs=44100, gamma=2, zeta=0.8, L=60e-2,c=340,rc=2e-2,fig=True, sound=True)
 
 #print(len(p))
 #print(len(time))
