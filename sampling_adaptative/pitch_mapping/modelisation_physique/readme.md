@@ -1,2 +1,0 @@
-## Modèles physiques
-
