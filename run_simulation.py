@@ -26,7 +26,7 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
     
     """
     Parameters
-    
+    -------
     X = points du mapping
     
     descriptor : descritpeur que l'on choisit d'observer
@@ -38,6 +38,8 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
     arg_descriptors = arguments des fonctions descripteurs
     
     arg_model = arguments des méthodes
+    
+    note_frequencies = notes de référence pour la description du pitch
     
     Returns
     -------
@@ -62,7 +64,7 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
     else :
         from modelisation_physique.Modele_modal_fct import simulation
         t_max, fe, L, c, nb_mode= arg_modele
-    nb_mode=int(nb_mode)
+    
 
     # Descripteur choisit
     if descriptor == "are_there_oscillations": #Paramètres des descripteurs
@@ -71,7 +73,7 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
         for i, x in tqdm(X.iterrows()):
             waveform, _ = simulation(x[abscisse], x[ordonnee], t_max, fe, L, c, nb_mode)
             y[i] = 1 if dp.are_there_oscillations(waveform, epsilon) else 0
-        return X, y
+        return y
 
     
     elif descriptor == "pitch" :
@@ -89,7 +91,7 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
         for i in range(len(y)):
             if y[i] !=freq : 
                 y[i] = 0
-        return X, y
+        return y
 
-X, y =  labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor, note_frequencies)
+y =  labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor, note_frequencies)
 
