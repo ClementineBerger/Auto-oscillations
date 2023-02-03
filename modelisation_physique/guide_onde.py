@@ -4,7 +4,7 @@
 Implémentation guide d'onde suivant l'article de McIntyre : à l'avantage d'être plus modulable
 avec la possibilité de changer de fonction de réflexion au bout du guide d'onde
 
-Ce script fonctionne pour une clarinette de longueur L et pour une corde pincée en son MILIEU
+Ce script fonctionne pour une simulation de longueur L et pour une corde pincée en son MILIEU
 """
 
 
@@ -54,7 +54,7 @@ def coeffs(gamma, zeta):
     return F0, A, B, C
 
 
-def Fclarinette(list_p, gamma, zeta):
+def Fsimulation(list_p, gamma, zeta):
     """
     Renvoit le débit u suivant la pression p
     suivant la relation u = F(p)
@@ -67,7 +67,7 @@ def Fclarinette(list_p, gamma, zeta):
     return u
 
 
-def tableau_Fclarinette(pmin, pmax, nb_pts, gamma, zeta):
+def tableau_Fsimulation(pmin, pmax, nb_pts, gamma, zeta):
     """
     Rempli un tableau F pour faire la recherche de 0
 
@@ -78,7 +78,7 @@ def tableau_Fclarinette(pmin, pmax, nb_pts, gamma, zeta):
     zeta =
     """
     tab_p = np.linspace(pmin, pmax, nb_pts)
-    tab_F = Fclarinette(tab_p, gamma, zeta)
+    tab_F = Fsimulation(tab_p, gamma, zeta)
 
     return tab_p, tab_F
 
@@ -211,7 +211,7 @@ def reflexion(T, pertes_dirac,frac_T, rate_gauss, fe, Nsim, type):
     return reflex_list
 
 
-def clarinette(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,frac_T=10,rate_gauss=0.4,fig=False,sound=False):
+def simulation(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,frac_T=10,rate_gauss=0.4,fig=False,sound=False):
     """
     Renvoit la pression p et le débit u (adimensionnés) simulés avec
     les paramètres gamma, zeta :
@@ -245,7 +245,7 @@ def clarinette(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,f
 
     ######## SIMULATION
 
-    tab_p, tab_F = tableau_Fclarinette(-5, 5, 2000, gamma, zeta)
+    tab_p, tab_F = tableau_Fsimulation(-5, 5, 2000, gamma, zeta)
     solvF = tab_p - tab_F
 
     i_act = np.argmin(np.abs(tab_p - gamma)) + 1
@@ -253,7 +253,7 @@ def clarinette(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,f
     if type_reflection == "dirac":
         for j in range(Nsim):
             if j < indT:
-                ph = -(p[0] + u[0])
+                ph = 0
             else:
                 ph = -(p[j - indT] + u[j - indT])
             i = find_zero(solvF - ph, i_act)
