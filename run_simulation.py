@@ -58,17 +58,18 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
     #Méthode utilisée
     if modele == 'guide_onde': #Paramètres des méthode
         from modelisation_physique.guide_onde import simulation
+        t_max, fe, L, c, nb_mode = arg_modele
     else :
         from modelisation_physique.Modele_modal_fct import simulation
-        
-    t_max, fe, L, c = arg_modele
+        t_max, fe, L, c, nb_mode= arg_modele
+    nb_mode=int(nb_mode)
 
     # Descripteur choisit
     if descriptor == "are_there_oscillations": #Paramètres des descripteurs
         epsilon = arg_descriptor
         type_reflection='dirac'
         for i, x in tqdm(X.iterrows()):
-            waveform, _ = simulation(x[abscisse], x[ordonnee], t_max, fe, L, c)
+            waveform, _ = simulation(x[abscisse], x[ordonnee], t_max, fe, L, c, nb_mode)
             y[i] = 1 if dp.are_there_oscillations(waveform, epsilon) else 0
         return X, y
 
@@ -77,7 +78,7 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
         n_classes = len(note_frequencies)
         fe ,osc_threshold ,cents_threshold, zeta, freq = arg_descriptor
         for i, x in tqdm(X.iterrows()):
-            waveform, _ = simulation(x[abscisse], zeta, t_max, fe, x[ordonnee], c)  
+            waveform, _ = simulation(x[abscisse], zeta, t_max, fe, x[ordonnee], c, nb_mode)  
             f0 = dp.get_f0(waveform, fe) * dp.are_there_oscillations(waveform, osc_threshold)
             is_close, idx = dp.f0_to_categorical(f0, note_frequencies, epsilon=cents_threshold)
             if is_close:
