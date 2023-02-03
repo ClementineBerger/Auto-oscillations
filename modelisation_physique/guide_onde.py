@@ -14,7 +14,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as sig
 import scipy.integrate as intgr
-from IPython.display import Audio
 
 ### Paramètres utilisateurs
 
@@ -29,14 +28,14 @@ from IPython.display import Audio
 ### Définition des fonctions
 
 
-def retardT(L, c):
+def retardT(l, c0):
     """
     Renvoie T le retard accumulé par l'onde
     en un aller-retour
-    L : longueur du guide cylindrique
-    c : célérité des ondes dans l'air
+    l : longueur du guide cylindrique
+    c0 : célérité des ondes dans l'air
     """
-    return 2 * L / c
+    return 2 * l / c0
 
 
 def coeffs(gamma, zeta):
@@ -54,7 +53,7 @@ def coeffs(gamma, zeta):
     return F0, A, B, C
 
 
-def Fsimulation(list_p, gamma, zeta):
+def Fclarinette(list_p, gamma, zeta):
     """
     Renvoit le débit u suivant la pression p
     suivant la relation u = F(p)
@@ -63,7 +62,9 @@ def Fsimulation(list_p, gamma, zeta):
         return np.zeros(len(list_p))
     else:
         valid = (gamma - list_p < 1) & (gamma - list_p > 0)
-        u = zeta * (1 - gamma + list_p) * np.nan_to_num(np.sqrt(gamma - list_p)) * valid
+        sgn = (gamma-list_p)/np.abs(gamma-list_p)
+        #u = zeta * (1 - gamma + list_p) * np.nan_to_num(np.sqrt(gamma - list_p)) * valid
+        u = zeta * (1 - gamma + list_p) * np.sqrt(np.abs(gamma - list_p)) * valid * sgn
     return u
 
 
@@ -78,7 +79,7 @@ def tableau_Fsimulation(pmin, pmax, nb_pts, gamma, zeta):
     zeta =
     """
     tab_p = np.linspace(pmin, pmax, nb_pts)
-    tab_F = Fsimulation(tab_p, gamma, zeta)
+    tab_F = Fclarinette(tab_p, gamma, zeta)
 
     return tab_p, tab_F
 
@@ -90,12 +91,12 @@ def find_zero(tableau, i):
     tableau = tableau des valeurs de la fonction F sur l'intervalle souhaité
     i =
     """
-    l = len(tableau)
+    taille = len(tableau)
     changement_signe = (
-        tableau[0 : l - 1] * tableau[1:l]
+        tableau[0 : taille - 1] * tableau[1:taille]
     )  # il y a un point d'annulation entre tableau[j] et tableau[j+1] ssi tableau[j]*tableau[j+1] <= 0
     negatif = changement_signe <= 0  # True aux indices où il y a un changement de signe
-    tab_i0 = (np.arange(l - 1))[
+    tab_i0 = (np.arange(taille - 1))[
         negatif
     ]  # indices auxquels il y a un changement de signe
     if len(tab_i0) == 0:
@@ -111,7 +112,7 @@ def convolution(ind_tau, reflex_list, signal_list):
     Calcul de la convolution entre le signal p + u et la fonction de réflexion
     (aux temps passés) avec une intégration par la méthode des trapèzes
 
-    ind_tau = indice du temps de calcul
+    ind_tau = indice du temps de calcul courant
     reflex_list = liste des coefficients de réflexion dans le temps
     signal_list = liste p + u
 
@@ -132,7 +133,7 @@ def convolution_triangle(ind_tau, T, fe, frac_T, reflex_list, signal_list):
     Calcul de la convolution entre le signal p + u et la fonction de réflexion
     (aux temps passés) avec une intégration par la méthode des trapèzes
 
-    ind_tau = indice du temps de calcul
+    ind_tau = indice du temps de calcul courant
     reflex_list = liste des coefficients de réflexion dans le temps
     signal_list = liste p + u
 
@@ -211,7 +212,7 @@ def reflexion(T, pertes_dirac,frac_T, rate_gauss, fe, Nsim, type):
     return reflex_list
 
 
-def simulation(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,frac_T=10,rate_gauss=0.4,fig=False,sound=False):
+def simulation(t_max,sample_rate,gamma,zeta,type_reflection,l,c0,pertes_dirac=1,frac_T=10,rate_gauss=0.1,fig=False,sound=False):
     """
     Renvoit la pression p et le débit u (adimensionnés) simulés avec
     les paramètres gamma, zeta :
@@ -223,12 +224,12 @@ def simulation(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,f
     type_reflection : type de réflexion au bout du guide, 'dirac', 'triangle' ou 'gauss'
     frac_T : seulement pour le type 'triangle', définition de la demi-largeur du triangle T/frac_T
     rate_gauss : demi-largeur à mi-hauteur (typiquement entre 0.05 et 0.4)
-    L : longueur du cylindre
-    c : célérité des ondes
+    l : longueur du cylindre
+    c0 : célérité des ondes
     """
 
     # Initialisation des paramètres
-    T = retardT(L, c)
+    T = retardT(l, c0)
     indT = int(T * sample_rate)
 
     # F0, A, B, C = coeffs(gamma, zeta)
@@ -260,6 +261,7 @@ def simulation(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,f
             i_act = i
             p[j] = tab_p[i]
             u[j] = tab_F[i]
+            # u[j] = Fclarinette(np.array(p[j]),gamma,zeta)
             # disc = (A-1)**2 -4*B*(F0+ph)
             # p_fixe = (1-A-np.sqrt(disc))/(2*B)
             # p_fixe = (ph+F0)/(1-A)
@@ -307,7 +309,7 @@ def simulation(t_max,sample_rate,gamma,zeta,type_reflection,L,c,pertes_dirac=1,f
 
 
 
-####### Instruments à cordes frottées
+####### Instruments à cordes frottées (marche paaaaaas pour l'instant, oubli Léo)
 
 def Fcordes(delta_v, v0, Fb,fig=False):
     result = Fb*(delta_v/v0)/(1+(delta_v/v0)**2)
@@ -328,7 +330,7 @@ def tableau_Fcordes(vmin, vmax, nb_pts, v0, Fb):
 
     return tab_v, tab_f
 
-def cordes(t_max,sample_rate,v0,Fb,type_reflection,L,c,pertes_dirac=1,frac_T=10,rate_gauss=0.4,fig=False,sound=False):
+def cordes(t_max,sample_rate,v0,Fb,type_reflection,L,c0,pertes_dirac=1,frac_T=10,rate_gauss=0.4,fig=False,sound=False):
     """
     Renvoit la différence de vitesse dv et la force transverse f (adimensionnés) simulés avec
     les paramètres gamma, zeta :
@@ -345,7 +347,7 @@ def cordes(t_max,sample_rate,v0,Fb,type_reflection,L,c,pertes_dirac=1,frac_T=10,
     """
 
     # Initialisation des paramètres
-    T = retardT(L, c)
+    T = retardT(L, c0)
     indT = int(T * sample_rate)
 
     # F0, A, B, C = coeffs(gamma, zeta)
@@ -370,7 +372,7 @@ def cordes(t_max,sample_rate,v0,Fb,type_reflection,L,c,pertes_dirac=1,frac_T=10,
     if type_reflection == "dirac":
         for j in range(Nsim):
             if j < indT:
-                vh = -(dv[0] + f[0])
+                vh = 0
             else:
                 vh = -(dv[j - indT] + f[j - indT])
             #plt.plot(solvF - vh)
