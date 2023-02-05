@@ -8,12 +8,16 @@ Created on Wed Feb  1 13:54:34 2023
 
 """
 
-Ce script contient une fonction permettant d'initialiser les points dans un espace de taille donné
+Ce script contient une fonction permettant d'initialiser les points 
+dans un espace de taille donné 
+
 """
 import numpy as np
 from doepy import build
 
-def initialisation(abscisse, ordonnée,dim1 ,dim2, num_samples):
+def initialisation(
+        abscisse, ordonnée,dim1 ,dim2, 
+        num_samples):
     """
     abscisse = paramètre de contrôle en abscisse
     ordonnée = paramètre de contrôle en ordonnée

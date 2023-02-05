@@ -74,7 +74,6 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
             waveform, _ = simulation(x[abscisse], x[ordonnee], t_max, fe, L, c, nb_mode)
             y[i] = 1 if dp.are_there_oscillations(waveform, epsilon) else 0
         return y
-
     
     elif descriptor == "pitch" :
         n_classes = len(note_frequencies)
@@ -82,15 +81,16 @@ def labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor
         for i, x in tqdm(X.iterrows()):
             waveform, _ = simulation(x[abscisse], zeta, t_max, fe, x[ordonnee], c, nb_mode)  
             f0 = dp.get_f0(waveform, fe) * dp.are_there_oscillations(waveform, osc_threshold)
-            is_close, idx = dp.f0_to_categorical(f0, note_frequencies, epsilon=cents_threshold)
+            is_close, idx = dp.f0_to_categorical(f0, note_frequencies, cents_threshold)
             if is_close:
                 y[i] = idx
             else:
                 y[i] = n_classes
 
+        
         for i in range(len(y)):
             if y[i] !=freq : 
-                y[i] = 0
+                y[i] = 0 
         return y
 
 y =  labels(X, descriptor, abscisse, ordonnee, modele, arg_modele, arg_descriptor, note_frequencies)
