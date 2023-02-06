@@ -9,6 +9,13 @@ Created on Wed Feb  1 12:32:49 2023
 """
 Ce script contient les fonctions calculant les descripteurs utiles au mapping
 
+----------
+are_there_oscillations : renvoie s'il y a présence d'oscillations entretenues ou non à partir d'un critère donné 
+                         en argument
+                        
+                        
+get_f0, f0_to_categorical : renvoie le numéro d'une note harmonique si celle-ci est proche de la vrai fréquence
+                            f0.
 """
 
 import os
@@ -39,6 +46,8 @@ def are_there_oscillations(waveform, epsilon):
     return criterion > epsilon
 
 
+
+#Pitch
 def get_f0(waveform, sr, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C7")):
     """ Estimate F0 using Yin's algorithm. The algorithm is applied frame by frame
     then the final F0 is obtained using the mean of the last 2/3 frames."""
