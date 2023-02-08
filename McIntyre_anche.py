@@ -17,7 +17,9 @@ n_F = 201
 tableau_des_temps = np.linspace(0, t_max, nt)
 
 def resoudre(tableau, i):
+    """
     # recherche le point d'annulation de tableau le plus proche possible de i
+    """
     l = len(tableau)
     changement_signe = tableau[0:l-1]*tableau[1:l] # il y a un point d'annulation entre tableau[j] et tableau[j+1] ssi tableau[j]*tableau[j+1] <= 0
     negatif = changement_signe <= 0 # True aux indices où il y a un changement de signe
@@ -28,8 +30,10 @@ def resoudre(tableau, i):
     return tab_i0[i0]
 
 def F(n_F, gamma_m):
+    """
     # Cette sous-fonction renvoie un tableau gamma_F allant de -1 à 1, et un tableau flux_F = F(gamma_F)
     # gamma_m est la pression dans la bouche (ou équivalent)
+    """
     gamma_F = np.linspace(-1,1,n_F)
     flux_F = np.zeros(n_F)
     imin = int(gamma_m*n_F/2)
@@ -38,6 +42,12 @@ def F(n_F, gamma_m):
     return gamma_F, flux_F
 
 def embouche(X,t, gamma_F,flux_F, gamma_t,flux_t, m,a):
+    """
+    Fonction auxiliaire, à donner en paramètre à ode
+    Cette fonction calcule X' en fonction de X et t
+    Mais aussi, par effet de bord, elle stocke gamma et flux dans les tableaux gamma_t et flux_t,
+    afin que leurs valeurs puissent être réutilisées (réflexion, tout ça)
+    """
     (p,p1) = X
 
     i_t = int(t*sample_rate)
@@ -67,6 +77,9 @@ def embouche(X,t, gamma_F,flux_F, gamma_t,flux_t, m,a):
     return (p1,p2)
 
 def embouchure(gamma_m, omega, Q):
+    """
+    La grosse fonction
+    """
     gamma_t = np.zeros(nt+5)
     flux_t = np.zeros(nt+5)
     
@@ -94,15 +107,19 @@ def frequence(pression):
     return np.argmax(fourier[1:nt//4])
 
 
-for omg in range(1,10):
-    freq = []
-    for pres in range(100):
-        pression = embouchure(pres/100, omg*1000, 3)
-        freq.append(frequence(pression))
-    plt.plot(range(100), freq, label="omega = "+str(omg*1000))
+
+plt.subplot(2,1,1)
+for p in range(6):
+    pres = embouchure(p/5, 4224, 1)
+    plt.plot(tableau_des_temps, pres, label="p_m = "+str(p/5))
 plt.legend()
-plt.xlabel("pression dans la bouche")
-plt.ylabel("fréquence")
+plt.title("Clarinette")
+
+plt.subplot(2,1,2)
+for p in range(6):
+    pres = embouchure(p/5, 2112, 10)
+    plt.plot(tableau_des_temps, pres, label="p_m = "+str(p/5))
+plt.legend()
+plt.title("Cuivre")
+
 plt.show()
-
-
