@@ -48,7 +48,7 @@ def are_there_oscillations(waveform, epsilon):
 
 
 #Pitch
-def get_f0(waveform, sr, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C7")):
+def get_f0(waveform, sr, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C3")):
     """ Estimate F0 using Yin's algorithm. The algorithm is applied frame by frame
     then the final F0 is obtained using the mean of the last 2/3 frames."""
     n_1_3 = int(np.rint(len(waveform) / 3))

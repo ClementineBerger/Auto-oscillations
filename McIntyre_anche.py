@@ -2,6 +2,7 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
+"""
 sample_rate = 44100
 F0 = 440 # fréquence supposée de l'instrument, en Hz
 t_max = .08 # durée de la simulation, en s
@@ -15,6 +16,7 @@ nt = int(t_max*sample_rate)
 n_F = 201
 
 tableau_des_temps = np.linspace(0, t_max, nt)
+"""
 
 def resoudre(tableau, i):
     """
@@ -107,7 +109,7 @@ def frequence(pression):
     return np.argmax(fourier[1:nt//4])
 
 
-
+"""
 plt.subplot(2,1,1)
 for p in range(6):
     pres = embouchure(p/5, 4224, 1)
@@ -121,5 +123,5 @@ for p in range(6):
     plt.plot(tableau_des_temps, pres, label="p_m = "+str(p/5))
 plt.legend()
 plt.title("Cuivre")
-
 plt.show()
+"""
