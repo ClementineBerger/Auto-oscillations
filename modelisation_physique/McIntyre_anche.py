@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 sample_rate = 44100
 F0 = 440 # fréquence supposée de l'instrument, en Hz
-t_max = .08 # durée de la simulation, en s
+t_max = .1 # durée de la simulation, en s
 
 T = 1/F0 # période supposée de l'instrument, en s
 i_T = int(sample_rate*T) # période supposée de l'instrument, en nb échantillon
@@ -29,7 +29,7 @@ def resoudre(tableau, i):
     i0 = np.argmin(np.abs(tab_i0-i)) # indice de l'indice le plus proche de i dans tab_i0
     return tab_i0[i0]
 
-def F(n_F, gamma_m):
+def Fclarinette(n_F, gamma_m):
     """
     # Cette sous-fonction renvoie un tableau gamma_F allant de -1 à 1, et un tableau flux_F = F(gamma_F)
     # gamma_m est la pression dans la bouche (ou équivalent)
@@ -76,14 +76,15 @@ def embouche(X,t, gamma_F,flux_F, gamma_t,flux_t, m,a):
     p2 = (q + f - p - a*p1)/m
     return (p1,p2)
 
-def embouchure(gamma_m, omega, Q):
+def embouchure(gamma_m, zeta0, omega, Q):
     """
     La grosse fonction
     """
     gamma_t = np.zeros(nt+5)
     flux_t = np.zeros(nt+5)
     
-    gamma_F, flux_F = F(n_F, gamma_m)
+    gamma_F, flux_F = Fclarinette(n_F, gamma_m)
+    flux_F = zeta0*flux_F
 
     m = 1/omega**2
     a = Q/omega
@@ -107,19 +108,56 @@ def frequence(pression):
     return np.argmax(fourier[1:nt//4])
 
 
+def simulation(
+    t_max,
+    sample_rate,
+    gamma,
+    zeta,
+    type_reflection,
+    l,
+    c0,
+    pertes = 1,
+    omega_anche = 4224,
+    Q_anche = 1,
+    fig = False,
+    sound = False
+):
+    
+    F0 = c0/2/l # fréquence supposée de l'instrument, en Hz
+    T = 1/F0 # période supposée de l'instrument, en s
+    i_T = int(sample_rate*T) # période supposée de l'instrument, en nb échantillon
+    r_dt = np.array([0]*i_T+[1])
+    r_dt = -pertes*r_dt/np.sum(r_dt)
+    
+    nt = int(t_max*sample_rate)
+    n_F = 201
+    
+    tableau_des_temps = np.linspace(0, t_max, nt)
 
+    gamma_t = embouchure(gamma,zeta,omega_anche,Q_anche)
+    if fig:
+        plt.plot(tableau_des_temps, gamma_t)
+        plt.xlabel("temps (s)")
+        plt.ylabel("pression")
+        plt.title("Simulation instrument à anche dynamique")
+        plt.show()
+    return gamma_t
+
+
+"""
 plt.subplot(2,1,1)
-for p in range(6):
+for p in range(5):
     pres = embouchure(p/5, 4224, 1)
     plt.plot(tableau_des_temps, pres, label="p_m = "+str(p/5))
 plt.legend()
 plt.title("Clarinette")
 
 plt.subplot(2,1,2)
-for p in range(6):
-    pres = embouchure(p/5, 2112, 10)
+for p in range(5):
+    pres = embouchure(p/5, 4224, 10)
     plt.plot(tableau_des_temps, pres, label="p_m = "+str(p/5))
 plt.legend()
 plt.title("Cuivre")
 
 plt.show()
+"""
