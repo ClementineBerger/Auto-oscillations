@@ -201,7 +201,7 @@ def reflexion(T, pertes_dirac, frac_T, rate_gauss, fe, Nsim, type):
     elif type == "gauss":
         demi_largeur = rate_gauss * T
         sigma = demi_largeur / np.sqrt(2 * np.log(2))
-        b = 1 / (2 * (sigma**2))
+        b = 1 / (2 * (sigma ** 2))
         a = 1 / (
             sigma * np.sqrt(2 * np.pi)
         )  ### à revoir, le fait que l'aire de r doit être égale à 1
@@ -224,7 +224,7 @@ def calcul_rampe(t_rampe, gamma, sample_rate, time):
     return gammas
 
 
-def simulation(
+def clarinette(
     t_max,
     sample_rate,
     gamma,
@@ -356,247 +356,224 @@ def simulation(
         plt.ylabel("Amplitude", size=14)
         plt.show()
 
-    # if sound :
-    #    display(Audio(p,rate=fe))
-
     return p, u
 
 
-####### Instruments à cordes frottées (marche paaaaaas pour l'instant, oubli Léo)
+####### Instruments à cordes frottées
 
 
-def Fcordes(v, vb, v0, Fb):
-    dv = vb - v
-    mu_s = 0.3
-    Fmax = Fb * mu_s
-    return 2 * Fmax * (dv / v0) / (1 + (dv / v0) ** 2)
-    # return 2*Fmax/(1+(dv/v0)**2)
+def Fcordes(v, vb, v0, Fb, mu_s, mu_d):
+    dv = (vb - v) / v0
+    # dv = v/v0
+    a = 2 * (mu_s - mu_d) * Fb
+    b = mu_d * Fb
+    sgn = (dv) / abs(dv)
+    return a * dv / (1 + dv ** 2) + b
 
 
-def tableau_Fcordes(vmin, vmax, nb_pts, vb, v0, Fb):
+def tableau_Fcordes(vmin, vmax, nb_pts, vb, v0, Fb, mu_s, mu_d):
     """
     Rempli un tableau F pour faire la recherche de 0
 
-    vmin = borne inférieure de dv
-    vmax = borne supérieure de dv
+    vmin = borne inférieure de v
+    vmax = borne supérieure de v
     nb_pts = nombre de points de calculs
     """
     tab_v = np.linspace(vmin, vmax, nb_pts)
-    tab_f = Fcordes(tab_v, vb, v0, Fb)
+    tab_f = Fcordes(tab_v, vb, v0, Fb, mu_s, mu_d)
 
     return tab_v, tab_f
+
+
+def reflexion_cordes(alpha1, alpha2, max_ref, Nsim, sample_rate, beta, l, c0):
+    """ Génération de la fonction de réflexion globale (sur le chevalet
+    et sur le sillet)
+
+    Args:
+        alpha1 (_float_): coefficient de réflexion au chevalet
+        alpha2 (_float_): coefficient de réflexion au sillet
+        max_ref (_int_): nombre de réflexions max considérées de part et d'autre
+        Nsim (_int_): nombre d'échantillons temporels
+        sample_rate (_int_): fréquence d'échantillonnage
+        beta (_float_): portion de la longueur de la corde où se trouve l'archet
+        l (_float_): longueur de la corde
+        c0 (_float_): célérité des ondes transversales
+
+    Returns:
+        _array_: vecteur contenant la fonction de réflexion
+    """
+    alpha1 = -0.49
+    alpha2 = -0.49
+
+    r_idea = np.zeros(Nsim)
+    ref = 1
+    eps = 1e-4
+
+    max_ref = 15
+
+    nb_alphas1 = np.zeros(2 * max_ref)
+    nb_alphas1[0::2] = np.arange(1, max_ref + 1)
+    nb_alphas1[1::2] = np.arange(1, max_ref + 1)
+    print(nb_alphas1)
+
+    nb_alphas2 = np.zeros(2 * max_ref)
+    nb_alphas2[1:] = nb_alphas1[:-1]
+    print(nb_alphas2)
+
+    distances = 2 * beta * l + nb_alphas1 + 2 * (1 - beta) * l + nb_alphas2
+    ind_tps = (sample_rate * distances / c0).astype(int)
+    coeffs_ref = (alpha1 ** nb_alphas1) * (alpha2 ** nb_alphas2)
+
+    r_idea[ind_tps] += coeffs_ref
+
+    distances = 2 * (1 - beta) * l + nb_alphas1 + 2 * (beta) * l + nb_alphas2
+    ind_tps = (sample_rate * distances / c0).astype(int)
+    coeffs_ref = (alpha1 ** nb_alphas1) * (alpha2 ** nb_alphas2)
+
+    r_idea[ind_tps] = coeffs_ref
+
+    return r_idea
+
+
+def find_zero_cordes(tableau, iprevious):
+    """
+    Recherche le point d'annulation de tableau le plus proche possible de i
+
+    tableau = tableau des valeurs de la fonction F sur l'intervalle souhaité
+    iprevious = indice du précédent 0
+    """
+
+    indmin = np.argmax(tableau)
+    indmax = np.argmin(tableau)
+
+    taille = len(tableau)
+    changement_signe = (
+        tableau[0 : taille - 1] * tableau[1:taille]
+    )  # il y a un point d'annulation entre tableau[j] et tableau[j+1] ssi tableau[j]*tableau[j+1] <= 0
+    negatif = changement_signe <= 0  # True aux indices où il y a un changement de signe
+    tab_i0 = (np.arange(taille - 1))[
+        negatif
+    ]  # indices auxquels il y a un changement de signe
+    if len(tab_i0) == 0:
+        return np.argmin(np.abs(tableau))
+    if iprevious in np.arange(indmin, indmax + 1):
+        for i in tab_i0:
+            if i in np.arange(indmin, indmax):
+                return tab_i0[i]
+    else:
+        i0 = np.argmin(
+            np.abs(tab_i0 - iprevious)
+        )  # indice de l'indice le plus proche de iprevious dans tab_i0
+    return tab_i0[i0]
 
 
 def cordes(
     t_max,
     sample_rate,
-    vb,
-    v0,
-    Fb,
-    type_reflection,
-    L,
-    c0,
+    gamma,
+    zeta,
+    beta,
+    l,
+    type_reflection="dirac",
+    rampe=False,
+    t_rampe=0.2,
     pertes_dirac=1,
     frac_T=10,
-    rate_gauss=0.4,
+    rate_gauss=0.1,
     fig=False,
     sound=False,
 ):
+    """Simulation du violon par la méthode du guide d'onde
+
+    Args:
+        t_max (_float_): durée de la simulation en s
+        sample_rate (_type_): fréquence d'échantillonnage en Hz
+        gamma (_type_): vb vitesse de l'archet sur la corde
+        zeta (_type_): force exercée par l'archet sur la corde
+        beta (_type_): fraction de la longueur de la corde correspondant à la position de l'archet
+        l (_type_): longeur de la corde
+        type_reflection (str, optional): inutile dans ce modèle. Defaults to 'dirac'.
+        rampe (bool, optional): pour l'instant inutile, je vais essayer de le rajouter. Defaults to False.
+        t_rampe (float, optional): _description_. Defaults to 0.2.
+        pertes_dirac (int, optional): _description_. Defaults to 1.
+        frac_T (int, optional): _description_. Defaults to 10.
+        rate_gauss (float, optional): _description_. Defaults to 0.1.
+        fig (bool, optional): _description_. Defaults to False.
+        sound (bool, optional): _description_. Defaults to False.
     """
-    Renvoit la différence de vitesse dv et la force transverse f (adimensionnés) simulés avec
-    les paramètres gamma, zeta :
 
-    t_max : durée de la simulation en s
-    fe : fréquence d'échantillonnage de la simulation en Hz
-    gamma : contrôle de la pression de bouche
-    zeta : contrôle anche
-    type_reflection : type de réflexion au bout du guide, 'dirac', 'triangle' ou 'gauss'
-    frac_T : seulement pour le type 'triangle', définition de la demi-largeur du triangle T/frac_T
-    rate_gauss : demi-largeur à mi-hauteur (typiquement entre 0.05 et 0.4)
-    L : longueur du cylindre
-    c : célérité des ondes
-    """
+    vb = gamma
+    Fb = zeta
 
-    rho = 0.4e-3
-    T = 75
+    v0 = 0.008  # paramètre de régularisation pour la fonction non-linéaire
 
-    Z = np.sqrt(T * rho)
+    Nsim = int(t_max * sample_rate)
 
-    # Initialisation des paramètres
-    T = retardT(L, c0)
-    indT = int(T * sample_rate)
-
-    # F0, A, B, C = coeffs(gamma, zeta)
-
-    time = np.arange(int(t_max * sample_rate)) / sample_rate  # temps de simulation
-    Nsim = len(time)
-
-    v = np.zeros(Nsim)
-    f = np.zeros(Nsim)
-
-    reflex_list = reflexion(
-        T, pertes_dirac, frac_T, rate_gauss, sample_rate, Nsim, type=type_reflection
-    )
-
-    ######## SIMULATION
-
-    tab_v, tab_f = tableau_Fcordes(-2, 2, 2000, vb, v0, Fb)
-    solvF = tab_v - tab_f / (2 * Z)
-
-    i_act = np.argmin(solvF - vb)
-
-    if type_reflection == "dirac":
-        for j in range(Nsim):
-            if j < indT:
-                vh = 0
-            else:
-                vh = -(v[j - indT] + f[j - indT] / (2 * Z))
-            # plt.plot(solvF - vh)
-            # break
-            i = find_zero(solvF - vh, i_act)
-            i_act = i
-            # print(i_act)
-            v[j] = tab_v[i]
-            f[j] = tab_f[i]
-            # disc = (A-1)**2 -4*B*(F0+ph)
-            # p_fixe = (1-A-np.sqrt(disc))/(2*B)
-            # p_fixe = (ph+F0)/(1-A)
-            # p[j] = p_fixe
-            # u[j] = F(np.array([p_fixe]),gamma,zeta)
-
-    elif type_reflection == "triangle":
-        for j in range(Nsim):
-            vh = convolution_triangle(
-                ind_tau=j,
-                T=T,
-                fe=sample_rate,
-                frac_T=frac_T,
-                reflex_list=reflex_list,
-                signal_list=v + f,
-            )
-            i = find_zero(solvF - vh, i_act)
-            i_act = i
-            v[j] = tab_v[i]
-            f[j] = tab_f[i]
-            # p_fixe = (ph+F0)/(1-A)
-            # p[j] = p_fixe
-            # u[j] = F(np.array([p_fixe]),gamma,zeta)
-
-    elif type_reflection == "gauss":
-        for j in range(Nsim):
-            vh = convolution(ind_tau=j, reflex_list=reflex_list, signal_list=v + f)
-            # print(ph)
-            i = find_zero(solvF - vh, i_act)
-            i_act = i
-            v[j] = tab_v[i]
-            f[j] = tab_f[i]
-            # p_fixe = (ph+F0)/(1-A)
-            # p[j] = p_fixe
-            # u[j] = F(np.array([p_fixe]),gamma,zeta)
-
-    if fig:
-        plt.figure(figsize=(10, 5))
-        plt.plot(time, v)
-        plt.xlim(0, 0.2)
-        plt.ylim(-1.1, 1.1)
-        plt.tight_layout()
-        plt.xlabel("Temps en s", size=14)
-        plt.ylabel("Amplitude", size=14)
-        plt.show()
-
-    # if sound :
-    #    display(Audio(p,rate=fe))
-
-    return v, f
-
-
-def reflexion_cordes(beta, mu, llambda, l, c0, Nsim, sample_rate):
-    h2 = np.zeros(Nsim)
     tps = np.linspace(0, Nsim / sample_rate, Nsim)
-    tps_retard = tps - 2 * beta * l / c0
-    positif = tps_retard >= 0
-    ind1 = int(sample_rate * 2 * beta * l / c0)
-    ind2 = int(sample_rate * 2 * (1 - beta) * l / c0)
-    h1 = (
-        -((2 * mu) / (1 + llambda) ** 2)
-        * np.exp(-mu * tps_retard / (1 + llambda))
-        * positif
-    )
-    h1[ind1] += (1 - llambda) / (1 + llambda)
-    h2[ind2] = -1
-    return h1, h2
 
-
-def reflexion_totale_cordes(h1, h2, Z):
-    H1 = np.fft.rfft(h1)
-    H2 = np.fft.rfft(h2)
-
-    return (1 / Z) * (1 + H1 + H2 + H1 * H2) / (1 - H1 * H2)
-
-
-def cordes_V2(
-    t_max,
-    sample_rate,
-    vb,
-    v0,
-    Fb,
-    beta,
-    l,
-    c0,
-    fig=False,
-):
-    """
-    Renvoit la différence de vitesse dv et la force transverse f (adimensionnés) simulés avec
-    les paramètres gamma, zeta :
-
-    t_max : durée de la simulation en s
-    fe : fréquence d'échantillonnage de la simulation en Hz
-    gamma : contrôle de la pression de bouche
-    zeta : contrôle anche
-    type_reflection : type de réflexion au bout du guide, 'dirac', 'triangle' ou 'gauss'
-    frac_T : seulement pour le type 'triangle', définition de la demi-largeur du triangle T/frac_T
-    rate_gauss : demi-largeur à mi-hauteur (typiquement entre 0.05 et 0.4)
-    l : longueur du cylindre
-    c : célérité des ondes
-    """
-
-    rho = 0.4e-3
-    T = 75
+    rho = 3.1e-3
+    T = 51.9
     Z = np.sqrt(T * rho)
 
-    # Paramètres modèle de Cremer
-    mu = 39
-    llambda = 4e-5
+    c0 = np.sqrt(T / rho)
 
-    time = np.arange(int(t_max * sample_rate)) / sample_rate  # temps de simulation
-    Nsim = len(time)
+    fond = c0 / 2 / l
+
+    # Z = 1/2
+
+    mu_s = 0.4
+    mu_d = 0.2
+
+    alpha1 = -0.5
+    alpha2 = -0.49
+    max_ref = 15
 
     v = np.zeros(Nsim)
+    v[0] = vb
+
     f = np.zeros(Nsim)
+    f[0] = Fb
 
-    h1, h2 = reflexion_cordes(beta, mu, llambda, l, c0, Nsim, sample_rate)
+    per = 2 * l / c0
+    tadh = (1 - beta) * per
+    tgliss = beta * per
 
-    G = reflexion_totale_cordes(h1, h2, Z)
+    ind_adh = int(tadh * sample_rate)
+    indT = int(per * sample_rate)
+    ind_gliss = indT - ind_adh
 
-    reflex_list = np.fft.irfft(G, n=Nsim)
+    reflex_list = reflexion_cordes(
+        alpha1, alpha2, max_ref, Nsim, sample_rate, beta, l, c0
+    )
 
-    ######## SIMULATION
+    tab_v, tab_f = tableau_Fcordes(
+        -vb * (1 - beta) / beta - 0.5,
+        2 * vb * (1 - beta) / beta + 0.5,
+        4000,
+        vb,
+        v0,
+        Fb,
+        mu_s,
+        mu_d,
+    )
 
-    tab_v, tab_f = tableau_Fcordes(-2, 2, 2000, vb, v0, Fb)
-    solvF = tab_v - tab_f / (2 * Z)
+    solvF = tab_v - tab_f / 2 / Z
+    plt.plot(tab_v, tab_f / 2 / Z, color="darkblue")
 
-    i_act = np.argmin(solvF - vb)
+    iprevious = np.argmin(tab_f) - 10
+    vhs = []
 
     for j in range(Nsim):
-        vh = convolution(ind_tau=j, reflex_list=reflex_list, signal_list=v + f)
-        i = find_zero(solvF - vh, i_act)
-        i_act = i
+        vh = convolution(ind_tau=j, reflex_list=reflex_list, signal_list=v + f / 2 / Z)
+        i = find_zero(solvF - vh, iprevious)
+        iprevious = i
+        vhs.append(vh)
         v[j] = tab_v[i]
         f[j] = tab_f[i]
 
     if fig:
         plt.figure(figsize=(10, 5))
-        plt.plot(time, v)
+        plt.plot(tps, v)
         plt.xlim(0, 0.2)
         plt.ylim(-1.1, 1.1)
         plt.tight_layout()
@@ -604,7 +581,55 @@ def cordes_V2(
         plt.ylabel("Amplitude", size=14)
         plt.show()
 
-    # if sound :
-    #    display(Audio(p,rate=fe))
-
     return v, f
+
+
+def guide_onde(
+    instrument,
+    t_max,
+    sample_rate,
+    gamma,
+    zeta,
+    l,
+    c0=340,
+    beta=0.3,
+    type_reflection="dirac",
+    rampe=False,
+    t_rampe=0.2,
+    pertes_dirac=1,
+    frac_T=10,
+    rate_gauss=0.1,
+    fig=False,
+    sound=False,
+):
+
+    if instrument == "clarinette":
+        return clarinette(
+            t_max=t_max,
+            sample_rate=sample_rate,
+            gamma=gamma,
+            zeta=zeta,
+            type_reflection=type_reflection,
+            l=l,
+            c0=c0,
+            rampe=rampe,
+            t_rampe=t_rampe,
+            pertes_dirac=pertes_dirac,
+            frac_T=frac_T,
+            rate_gauss=rate_gauss,
+            fig=fig,
+        )
+
+    if instrument == "corde":
+        return cordes(
+            t_max=t_max,
+            sample_rate=sample_rate,
+            gamma=gamma,
+            zeta=zeta,
+            beta=beta,
+            l=l,
+            fig=fig,
+        )
+    else:
+        print("Mauvais nom d'instrument : 'clarinette' ou 'corde' ")
+        return 0
