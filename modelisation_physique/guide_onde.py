@@ -297,6 +297,11 @@ def clarinette(
         for j in range(Nsim):
             if j < indT:
                 ph = 0
+                i = find_zero(solvF - ph, i_act)
+                i_act = i
+                p[j] = tab_p[i]
+                u[j] = tab_F[i]
+                #ph = convolution(ind_tau=j, reflex_list=reflex_list, signal_list=p + u)
             elif rampe and j < ind_rampe:
                 ph = -(p[j - indT] + u[j - indT])
                 i = find_zero(solvFs[j] - ph, i_act)
