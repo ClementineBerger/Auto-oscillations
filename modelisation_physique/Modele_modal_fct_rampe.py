@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jan 16 11:10:51 2023
-
 @author: Romain Caron
 """
 import numpy as np
@@ -54,6 +53,57 @@ def RK4(X, tmax, nb_mode, sample_rate, args, vecs, vio):                    #Ord
         Xsx = [x*dt/6 for x in Xs]                        # dt/6 coefficient
         X = np.add(X, Xsx)                                # Addition to the initial X
 
+        x2[i+1] = sum(impair*X)                           # Put the sum of X in the output signal
+    return x2
+
+def RK4_adapt(X, tmax, nb_mode, sample_rate, args, vecs, vio):        #Order 4, adaptative version, only use for mapping/bifurcations
+
+
+
+    """
+        Inputs : the initial state variable X and other parameters
+        
+        Do : differential equation resolution Runge-Kutta order 4
+        
+        Returns : the pressure signal
+        
+    """
+    
+    (Fbis,omegabis,Y_mbis,pair,impair,x_out) = vecs     # Récupération des variables compactées
+    (As, Bs, Cs) = args                                 
+    
+    dt = 1/sample_rate                                  # Time step for Runge-Kutta method
+    x2 = np.zeros(int(sample_rate*tmax))                # Initialization of the output signal x2
+    x2[0]=sum(impair*X)                                 # The first step is directly extracted from the state variable 
+    
+    for i in range(int(sample_rate*tmax-1)):        # Time loop
+    
+        #--------------- First, a regular RK4
+        args2 = (As[i], Bs[i], Cs[i], vio)                # Update of the parameters for the 
+        k1 = func(X, nb_mode, args2, vecs)                # First RK coefficient
+        
+        k1x = [x*dt/2 for x in k1]                        # Interpolation of the coef
+        k2 = func(np.add(X, k1x), nb_mode, args2, vecs)   # Second RK coefficient
+        
+        k2x = [x*dt/2 for x in k2]                        # Same of the other coefs
+        k3 = func(np.add(X, k2x), nb_mode, args2, vecs)
+        
+        k3x = [x*dt for x in k3]                          # This time the time step is dt and not dt/2
+        k4 = func(np.add(X, k3x), nb_mode, args2, vecs)
+        
+        k2s = [x*2 for x in k2]                           # Application of the coefs in the final formula
+        k3s = [x*2 for x in k3]
+
+        Xs = np.add(np.add(np.add(k1, k2s), k3s), k4)     # Final sum of RK4
+        Xsx = [x*dt/6 for x in Xs]                        # dt/6 coefficient
+        X1 = X
+        X = np.add(X, Xsx)                                # Addition to the initial X
+
+        #--------------- Condition over precision
+        if np.abs(np.add(sum(impair*X),-sum(impair*X1)))<1e-10 or np.abs(sum(impair*X))>1e50:
+            X=0*impair;
+            return x2
+        
         x2[i+1] = sum(impair*X)                           # Put the sum of X in the output signal
     return x2
 
@@ -219,6 +269,7 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
         moment_quad_corde = 2.01e-14;
         #coef_frott_dyn_corde = 0.2;
         coef_frott_dyn_corde = 0.35;
+        c0 = np.sqrt(tension_corde/(mass_vol_corde*np.pi*(diametre_corde/2)**2));               # Sound speed
         #Les valeurs numériques sont extraites de la thèse de Vigué
         
         
@@ -277,7 +328,7 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
     #t1 = tim.time()                   #Démarrage du timer
     X = 0.01*impair                  #Initialisation de X avec p_n = gamma_velo à l'instant 0
 
-    p = RK4(X, tmax, nb_mode, sample_rate, args, vecs, vio)                   #Appel de la résolution
+    p = RK4_adapt(X, tmax, nb_mode, sample_rate, args, vecs, vio)                   #Appel de la résolution
     #tcalc = tim.time() - t1             #Arrêt du timer
     #print("Temps de calcul : "+str(tcalc)+"s")
     
@@ -301,6 +352,9 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
 
 if __name__ == "__main__":
 
+    
+    plt.close();
+    
     #------------------------------------------------ Lancement du modèle
     
     #------------- Clarinette
@@ -309,9 +363,9 @@ if __name__ == "__main__":
                          nb_mode = 5,
                          instrument = 'clarinette', 
                          sample_rate = 44100, 
-                         gamma_velo = 0.6, 
-                         zeta_force = 0.8, 
-                         durete_rampe = 2000, 
+                         gamma_velo = 0.1, 
+                         zeta_force = 0.3, 
+                         durete_rampe = 2000, #Varier entre 20 (doux) et 2000 (dur)
                          l_resonateur = 60e-2, 
                          fig = True, sound = True
                          )
@@ -333,11 +387,11 @@ if __name__ == "__main__":
     #------------- Violon
     """
     p, time = simulation(tmax = 2, 
-                         nb_mode = 5, 
+                         nb_mode = 1, 
                          instrument = 'violon', 
                          sample_rate = 44100, 
                          gamma_velo = 0.2, 
-                         zeta_force = 0.0105, 
+                         zeta_force = 4, 
                          durete_rampe = 2000, 
                          l_resonateur = 0.33, 
                          fig = True, sound = True
