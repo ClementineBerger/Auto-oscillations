@@ -26,12 +26,12 @@ def RK4(X, tmax, nb_mode, sample_rate, args, vecs, vio):                    #Ord
         
     """
     
-    (Fbis,omegabis,Y_mbis,pair,impair,x_out) = vecs     # Récupération des variables compactées
+    (Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out) = vecs     # Récupération des variables compactées
     (As, Bs, Cs) = args                                 
     
     dt = 1/sample_rate                                  # Time step for Runge-Kutta method
     x2 = np.zeros(int(sample_rate*tmax))                # Initialization of the output signal x2
-    x2[0]=sum(impair*X)                                 # The first step is directly extracted from the state variable 
+    x2[0]=sum(func_index*X)                                 # The first step is directly extracted from the state variable 
     
     for i in range(int(sample_rate*tmax-1)):        # Time loop 
         args2 = (As[i], Bs[i], Cs[i], vio)                # Update of the parameters for the 
@@ -53,7 +53,7 @@ def RK4(X, tmax, nb_mode, sample_rate, args, vecs, vio):                    #Ord
         Xsx = [x*dt/6 for x in Xs]                        # dt/6 coefficient
         X = np.add(X, Xsx)                                # Addition to the initial X
 
-        x2[i+1] = sum(impair*X)                           # Put the sum of X in the output signal
+        x2[i+1] = sum(func_index*X)                           # Put the sum of X in the output signal
     return x2
 
 def RK4_adapt(X, tmax, nb_mode, sample_rate, args, vecs, vio):        #Order 4, adaptative version, only use for mapping/bifurcations
@@ -69,12 +69,12 @@ def RK4_adapt(X, tmax, nb_mode, sample_rate, args, vecs, vio):        #Order 4, 
         
     """
     
-    (Fbis,omegabis,Y_mbis,pair,impair,x_out) = vecs     # Récupération des variables compactées
+    (Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out) = vecs     # Récupération des variables compactées
     (As, Bs, Cs) = args                                 
     
     dt = 1/sample_rate                                  # Time step for Runge-Kutta method
     x2 = np.zeros(int(sample_rate*tmax))                # Initialization of the output signal x2
-    x2[0]=sum(impair*X)                                 # The first step is directly extracted from the state variable 
+    x2[0]=sum(func_index*X)                                 # The first step is directly extracted from the state variable 
     
     for i in range(int(sample_rate*tmax-1)):        # Time loop
     
@@ -100,11 +100,11 @@ def RK4_adapt(X, tmax, nb_mode, sample_rate, args, vecs, vio):        #Order 4, 
         X = np.add(X, Xsx)                                # Addition to the initial X
 
         #--------------- Condition over precision
-        if np.abs(np.add(sum(impair*X),-sum(impair*X1)))<1e-10 or np.abs(sum(impair*X))>1e50:
-            X=0*impair
+        if np.abs(np.add(sum(func_index*X),-sum(func_index*X1)))<1e-10 or np.abs(sum(func_index*X))>1e50:
+            X=0*func_index
             return x2
         
-        x2[i+1] = sum(impair*X)                           # Put the sum of X in the output signal
+        x2[i+1] = sum(func_index*X)                           # Put the sum of X in the output signal
     return x2
 
 #---------------------------------------- Définition du système \Dot{X}=f(X)
@@ -119,14 +119,16 @@ def func_anche_simple(x, nb_mode, args, vecs):
     """
     
     (A, B, C, vio) = args                                            # Picking the compacted parameters
-    (Fbis,omegabis, Y_mbis, pair, impair, x_out) = vecs
+    (coeff_modaux,omega, Y_m, deriv_index, func_index, x_out) = vecs
     
-    commun = sum(x*pair)*(A + 2*B*sum(x*impair) + 3*C*sum(x*impair)**2)        # Derivative of the F(p) function
-    
+    #commun = sum(x*deriv_index)*(A + 2*B*sum(x*func_index) + 3*C*sum(x*func_index)**2)        # Derivative of the F(p) function
+    commun = np.sum(x[1::2])*(A + 2*B*np.sum(x[0::2]) + 3*C*np.sum(x[0::2])**2)
     x_out = np.zeros(nb_mode*2)                                                # Initialization of the output vector
-    x_out[1:] = Fbis[1:]*commun - (Y_mbis*x)[1:] - (np.power(omegabis, 2)*x)[:-1]    # Computing the \Dot{p} values
-    x_out[:-1] = x_out[:-1] + (x*pair)[1:]                                           # Computing the p values
-
+    #x_out[1:] = Fbis[1:]*commun - (Y_mbis*x)[1:] - (np.power(omegabis, 2)*x)[:-1]    # Computing the \Dot{p} values
+    #x_out[:-1] = x_out[:-1] + (x*deriv_index)[1:]                                           # Computing the p values
+    x_out[1::2] = coeff_modaux*commun - (Y_m*x[1::2]) - (np.square(omega)*x[0::2])    # Computing the \Dot{p} values
+    x_out[0::2] = x[1::2]
+    
     return x_out
 
 def func_violon(x, nb_mode, args, vecs):
@@ -140,23 +142,23 @@ def func_violon(x, nb_mode, args, vecs):
     
     (A, B, C, vio) = args                                           # Picking the compacted parameters
     (zeta_force, sigma, coef_frott_dyn_corde)  = vio
-    (Fbis, omegabis, Y_mbis, pair, impair, x_out) = vecs
+    (Fbis, omegabis, Y_mbis, deriv_index, func_index, x_out) = vecs
     
-    xpair = sum(x*pair)             # Pre-computing the sums of modal speed
-    ximpair = sum(x*impair)         # Pre-computing the sums of modal speed derivative
+    xderiv_index = sum(x*deriv_index)             # Pre-computing the sums of modal speed
+    xfunc_index = sum(x*func_index)         # Pre-computing the sums of modal speed derivative
     
-    commun = zeta_force*np.exp(-sigma*ximpair**2)*xpair\
-                       *(np.sqrt(sigma)*(2.33164 - 0.00186532*sigma)*ximpair**2 
+    commun = zeta_force*np.exp(-sigma*xfunc_index**2)*xderiv_index\
+                       *(np.sqrt(sigma)*(2.33164 - 0.00186532*sigma)*xfunc_index**2 
                          + 0.0127324*coef_frott_dyn_corde
-                                    *np.exp(sigma*ximpair**2)
+                                    *np.exp(sigma*xfunc_index**2)
                          + 0.000932658*np.sqrt(sigma) 
-                         - (4.66329 + 5)*sigma**(3/2)*ximpair**4
+                         - (4.66329 + 5)*sigma**(3/2)*xfunc_index**4
                          )\
-                       /(ximpair**2 + 0.0004)                         # Derivative of the F(p) function
+                       /(xfunc_index**2 + 0.0004)                         # Derivative of the F(p) function
 
     x_out = np.zeros(nb_mode*2)                                     # Initialization of the output vector
     x_out[1:] = Fbis[1:]*commun - (Y_mbis*x)[1:] - (np.power(omegabis, 2)*x)[:-1]    # Computing the \Dot{v} values
-    x_out[:-1] = x_out[:-1] + (x*pair)[1:]                                       # Computing the v values
+    x_out[:-1] = x_out[:-1] + (x*deriv_index)[1:]                                       # Computing the v values
 
     return x_out
 
@@ -256,8 +258,8 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
         Cs = -zeta_force*(gammas + 1) /16 /gammas**(5/2)
         
     elif instrument == 'violon':
-    
         #--------------------------------------------------------------------Violin
+        
         #----------------------------------------- Parameters
         diametre_corde = 1.35e-3
         
@@ -265,12 +267,12 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
         sigma = 1.8
         position_archet = 0.3*l_resonateur      #10e-2
         #position_archet = 3e-2;
-        mass_vol_corde = 3.1e-3  #/ (np.pi*(0.8e-3 /2)**2)
+        mass_vol_corde = 3.1e-3  / (np.pi*(0.8e-3 /2)**2)
         young_corde = 5e9
         moment_quad_corde = 2.01e-14
         #coef_frott_dyn_corde = 0.2;
         coef_frott_dyn_corde = 0.35
-        c0 = np.sqrt(tension_corde/(mass_vol_corde))  #*np.pi*(diametre_corde/2)**2))               # Sound speed
+        c0 = np.sqrt(tension_corde/(mass_vol_corde*np.pi*(diametre_corde/2)**2))               # Sound speed
         #Les valeurs numériques sont extraites de la thèse de Vigué
         
         
@@ -314,8 +316,8 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
     
     #----------------------------------------- Usefull vectors for computing
     
-    pair = np.arange(nb_mode*2) %2        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
-    impair = (np.arange(nb_mode*2) + 1) %2    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+    deriv_index = np.arange(nb_mode*2) %2        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
+    func_index = (np.arange(nb_mode*2) + 1) %2    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     x_out = np.zeros(nb_mode*2)                               
     Fbis = np.zeros(nb_mode*2)              #Conversion de F pour qu'il fasse la taille nb_mode*2
     Fbis[1::2] = coeff_modaux
@@ -323,13 +325,13 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
     omegabis[::2] = omega
     Y_mbis = np.zeros(nb_mode*2)
     Y_mbis[1::2] = abs(Y_m)
-    vecs=(Fbis, omegabis, Y_mbis, pair, impair, x_out)          #Packing in vecs
-    
+    #vecs=(Fbis, omegabis, Y_mbis, deriv_index, func_index, x_out)          #Packing in vecs
+    vecs = (coeff_modaux, omega, Y_m, deriv_index, func_index, x_out)
     
     #----------------------------------------- Lancement
     
     #t1 = tim.time()                   #Démarrage du timer
-    X = 0.01*impair                  #Initialisation de X avec p_n = gamma_velo à l'instant 0
+    X = 0.01*func_index                  #Initialisation de X avec p_n = gamma_velo à l'instant 0
 
     p = RK4_adapt(X, tmax, nb_mode, sample_rate, args, vecs, vio)                   #Appel de la résolution
     #tcalc = tim.time() - t1             #Arrêt du timer

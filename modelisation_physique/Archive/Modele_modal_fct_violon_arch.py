@@ -66,36 +66,36 @@ Ic=2.01e-14;
 
 def RK1(X,args,vecs):                    #Ordre 1
     dt=1/fs
-    impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+    func_index=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     
     x2=np.zeros(fs*dur)
-    x2[0]=sum(impair*X)
+    x2[0]=sum(func_index*X)
     for i in range(fs*dur-1):
         Xs=[x*dt for x in funtion(X,args,vecs)]
         X=np.add(X,Xs)
-        x2[i+1]=sum(impair*X)    
+        x2[i+1]=sum(func_index*X)    
     return x2
 
 def RK2(X,args,vecs):                    #Ordre 2
     dt=1/fs
     x2=np.zeros(fs*dur)
-    impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+    func_index=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     
-    x2[0]=sum(impair*X)
+    x2[0]=sum(func_index*X)
     for i in range(fs*dur-1):
         Xp=[x*dt/2 for x in funtion(X,args,vecs)]
         #print(Xp)
         Xs=[x*dt for x in funtion(np.add(X,Xp),args,vecs)]
         X=np.add(X,Xs)
         #print(Xs)
-        x2[i+1]=sum(impair*X)
+        x2[i+1]=sum(func_index*X)
     return x2
 
 def RK4(X,args,vecs):                    #Ordre 4
     dt=1/fs
     x2=np.zeros(fs*dur)
-    (Fbis,omegabis,Y_mbis,pair,impair,x_out)=vecs
-    x2[0]=sum(impair*X)
+    (Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out)=vecs
+    x2[0]=sum(func_index*X)
     for i in range(fs*dur-1):
         k1=funtion(X,args,vecs)
         
@@ -115,24 +115,24 @@ def RK4(X,args,vecs):                    #Ordre 4
         Xsx=[x*dt/6 for x in Xs]
         X=np.add(X,Xsx)
         #print(Xs)
-        x2[i+1]=sum(impair*X)
+        x2[i+1]=sum(func_index*X)
     return x2
 
 #---------------------------------------- Définition du système \Dot{X}=f(X)
 
 def funtion(x,args,vecs):
-    (Fbis,omegabis,Y_mbis,pair,impair,x_out) =vecs
+    (Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out) =vecs
     (F,omega,Y_m,v0,vb,Fb)  = args
     
     
-    xpair=sum(x*pair)
-    ximpair=sum(x*impair)
-    #commun=sum(x*pair)*(A+2*B*sum(x*impair)+3*C*sum(x*impair)**2) #Spécifique à la clarinette
-    #commun=Fb*v0*xpair*(2*vb*ximpair-ximpair**2+v0**2)/(-2*vb*ximpair+ximpair**2+v0**2) #Violon par Ollivier
-    commun=Fb*np.exp(-sigma*ximpair**2)*xpair*(np.sqrt(sigma)*(2.33164-0.00186532*sigma)*ximpair**2+0.0127324*mud*np.exp(sigma*ximpair**2)+0.000932658*np.sqrt(sigma)-(4.66329+5)*sigma**(3/2)*ximpair**4)/(ximpair**2+0.0004)
+    xderiv_index=sum(x*deriv_index)
+    xfunc_index=sum(x*func_index)
+    #commun=sum(x*deriv_index)*(A+2*B*sum(x*func_index)+3*C*sum(x*func_index)**2) #Spécifique à la clarinette
+    #commun=Fb*v0*xderiv_index*(2*vb*xfunc_index-xfunc_index**2+v0**2)/(-2*vb*xfunc_index+xfunc_index**2+v0**2) #Violon par Ollivier
+    commun=Fb*np.exp(-sigma*xfunc_index**2)*xderiv_index*(np.sqrt(sigma)*(2.33164-0.00186532*sigma)*xfunc_index**2+0.0127324*mud*np.exp(sigma*xfunc_index**2)+0.000932658*np.sqrt(sigma)-(4.66329+5)*sigma**(3/2)*xfunc_index**4)/(xfunc_index**2+0.0004)
     x_out=np.zeros(nb_mode*2)
     x_out[1:]=Fbis[1:]*commun-(Y_mbis*x)[1:]-(np.power(omegabis,2)*x)[:-1]
-    x_out[:-1]=x_out[:-1]+(x*pair)[1:]
+    x_out[:-1]=x_out[:-1]+(x*deriv_index)[1:]
 
     return x_out
 
@@ -204,8 +204,8 @@ def simulation(dur,nb_mode, fe, gamma, zeta, L,Lb,c,dc,Yc,Fb,vb,fig=False, sound
     args = (F,omega,Y_m,v0,vb,Fb)                            #Encapsulation des paramètres pour la résolution
 
     #--------------------------------Vecteurs utiles pour les calculs
-    pair = np.arange(nb_mode*2)%2        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
-    impair= (np.arange(nb_mode*2)+1)%2    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+    deriv_index = np.arange(nb_mode*2)%2        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
+    func_index= (np.arange(nb_mode*2)+1)%2    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     x_out=np.zeros(nb_mode*2)                               
     Fbis=np.zeros(nb_mode*2)                                #Conversion de F pour qu'il fasse la taille nb_mode*2
     Fbis[1::2]=F
@@ -213,13 +213,13 @@ def simulation(dur,nb_mode, fe, gamma, zeta, L,Lb,c,dc,Yc,Fb,vb,fig=False, sound
     omegabis[::2]=omega
     Y_mbis=np.zeros(nb_mode*2)
     Y_mbis[1::2]=abs(Y_m)
-    vecs=(Fbis,omegabis,Y_mbis,pair,impair,x_out)
+    vecs=(Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out)
     
     #--------------------------------Lancement
     
     t1=tim.time()                   #Démarrage du timer
-    #X=gamma*impair                  #Initialisation de X avec p_n=gamma à l'instant 0
-    X=vb*impair
+    #X=gamma*func_index                  #Initialisation de X avec p_n=gamma à l'instant 0
+    X=vb*func_index
     p=RK4(X,args,vecs)                   #Appel de la résolution
     tcalc=tim.time()-t1             #Arrêt du timer
     print("Temps de calcul : "+str(tcalc)+"s")
