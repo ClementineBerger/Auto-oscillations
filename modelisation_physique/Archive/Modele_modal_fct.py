@@ -41,36 +41,36 @@ rc = 3e-2           #rayon de la clarinette
 
 def RK1(X,dur,nb_mode, fs,args,vecs):                    #Ordre 1
     dt=1/fs
-    impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+    func_index=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     
     x2=np.zeros(int(fs*dur))
-    x2[0]=sum(impair*X)
+    x2[0]=sum(func_index*X)
     for i in range(fs*dur-1):
         Xs=[x*dt for x in func(X,dur,nb_mode, fs,args,vecs)]
         X=np.add(X,Xs)
-        x2[i+1]=sum(impair*X)    
+        x2[i+1]=sum(func_index*X)    
     return x2
 
 def RK2(X,dur,nb_mode, fs,args,vecs):                    #Ordre 2
     dt=1/fs
     x2=np.zeros(int(fs*dur))
-    impair=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+    func_index=np.array([(x+1)%2 for x in range(nb_mode*2)])    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     
-    x2[0]=sum(impair*X)
+    x2[0]=sum(func_index*X)
     for i in range(fs*dur-1):
         Xp=[x*dt/2 for x in func(X,dur,nb_mode, fs,args,vecs)]
         #print(Xp)
         Xs=[x*dt for x in func(np.add(X,Xp),dur,nb_mode, fs,args,vecs)]
         X=np.add(X,Xs)
         #print(Xs)
-        x2[i+1]=sum(impair*X)
+        x2[i+1]=sum(func_index*X)
     return x2
 
 def RK4(X,dur,nb_mode, fs,args,vecs):                    #Ordre 4
     dt=1/fs
     x2=np.zeros(int(fs*dur))
-    (Fbis,omegabis,Y_mbis,pair,impair,x_out)=vecs
-    x2[0]=sum(impair*X)
+    (Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out)=vecs
+    x2[0]=sum(func_index*X)
     for i in range(int(fs*dur-1)):
         k1=func(X,dur,nb_mode, fs,args,vecs)
         
@@ -90,23 +90,23 @@ def RK4(X,dur,nb_mode, fs,args,vecs):                    #Ordre 4
         Xsx=[x*dt/6 for x in Xs]
         X=np.add(X,Xsx)
         #print(Xs)
-        x2[i+1]=sum(impair*X)
+        x2[i+1]=sum(func_index*X)
     return x2
 
 #---------------------------------------- Définition du système \Dot{X}=f(X)
 
 def func(x,dur,nb_mode, fs,args,vecs):
     (A, B, C,F,omega,Y_m) = args
-    (Fbis,omegabis,Y_mbis,pair,impair,x_out) =vecs
+    (Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out) =vecs
 
-    commun=sum(x*pair)*(A+2*B*sum(x*impair)+3*C*sum(x*impair)**2)
+    commun=sum(x*deriv_index)*(A+2*B*sum(x*func_index)+3*C*sum(x*func_index)**2)
     
     x_out=np.zeros(nb_mode*2)
     x_out[1:]=Fbis[1:]*commun-(Y_mbis*x)[1:]-(np.power(omegabis,2)*x)[:-1]
     #print(x_out[0])
     #if x_out[1]!=0:
     #    print(x_out)
-    x_out[:-1]=x_out[:-1]+(x*pair)[1:]
+    x_out[:-1]=x_out[:-1]+(x*deriv_index)[1:]
     #print(x_out[0])
 
     return x_out
@@ -179,8 +179,8 @@ def simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=False, sound=False):
     
     args=(A, B, C,F,omega,Y_m)
     #--------------------------------Vecteurs utiles pour les calculs
-    pair = np.arange(nb_mode*2)%2        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
-    impair= (np.arange(nb_mode*2)+1)%2    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
+    deriv_index = np.arange(nb_mode*2)%2        #Vecteur à multiplier avec X pour avoir les dérivées uniquement
+    func_index= (np.arange(nb_mode*2)+1)%2    #Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
     x_out=np.zeros(nb_mode*2)                               
     Fbis=np.zeros(nb_mode*2)                                #Conversion de F pour qu'il fasse la taille nb_mode*2
     Fbis[1::2]=F
@@ -188,12 +188,12 @@ def simulation(dur,nb_mode, fs, gamma, zeta, L,c,rc,fig=False, sound=False):
     omegabis[::2]=omega
     Y_mbis=np.zeros(nb_mode*2)
     Y_mbis[1::2]=Y_m
-    vecs=(Fbis,omegabis,Y_mbis,pair,impair,x_out)
+    vecs=(Fbis,omegabis,Y_mbis,deriv_index,func_index,x_out)
     
     #--------------------------------Lancement
     
     t1=tim.time()                   #Démarrage du timer
-    X=0.01*impair                  #Initialisation de X avec p_n=gamma à l'instant 0
+    X=0.01*func_index                  #Initialisation de X avec p_n=gamma à l'instant 0
 
     p=RK4(X,dur,nb_mode, fs,args,vecs)                   #Appel de la résolution
     tcalc=tim.time()-t1             #Arrêt du timer

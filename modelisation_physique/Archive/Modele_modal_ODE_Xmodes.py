@@ -77,10 +77,10 @@ C = -zeta * (gamma + 1) / 16 / gamma ** (5 / 2)
 args = (A, B, C, F, omega, Y_m)  # Encapsulation des paramètres pour la résolution
 
 # --------------------------------Vecteurs utiles pour les calculs
-pair = np.array(
+deriv_index = np.array(
     [x % 2 for x in range(nb_mode * 2)]
 )  # Vecteur à multiplier avec X pour avoir les dérivées uniquement
-impair = np.array(
+func_index = np.array(
     [(x + 1) % 2 for x in range(nb_mode * 2)]
 )  # Vecteur à multiplier avec X pour avoir les non-dérivées uniquement
 x_out = np.zeros(nb_mode * 2)
@@ -143,7 +143,7 @@ def RK4(X, args):  # Ordre 4
         Xsx = [x * dt / 6 for x in Xs]
         X = np.add(X, Xsx)
         # print(Xs)
-        x2[i + 1] = sum(impair * X)
+        x2[i + 1] = sum(func_index * X)
     return x2
 
 
@@ -153,8 +153,8 @@ def RK4(X, args):  # Ordre 4
 def funtion(x, args):
     (A, B, C, F, omega, Y_m) = args
 
-    commun = sum(x * pair) * (
-        A + 2 * B * sum(x * impair) + 3 * C * sum(x * impair) ** 2
+    commun = sum(x * deriv_index) * (
+        A + 2 * B * sum(x * func_index) + 3 * C * sum(x * func_index) ** 2
     )
 
     x_out = np.zeros(nb_mode * 2)
@@ -162,7 +162,7 @@ def funtion(x, args):
     # print(x_out[0])
     # if x_out[1]!=0:
     #    print(x_out)
-    x_out[:-1] = x_out[:-1] + (x * pair)[1:]
+    x_out[:-1] = x_out[:-1] + (x * deriv_index)[1:]
     # print(x_out[0])
 
     return x_out
@@ -203,7 +203,7 @@ def play(y, Fe=44100):
 
 t1 = tim.time()  # Démarrage du timer
 
-X = [gamma * i for i in impair]  # Initialisation de X avec p_n=gamma à l'instant 0
+X = [gamma * i for i in func_index]  # Initialisation de X avec p_n=gamma à l'instant 0
 
 p = RK4(X, args)  # Appel de la résolution
 tcalc = tim.time() - t1  # Arrêt du timer
