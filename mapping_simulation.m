@@ -1,49 +1,68 @@
 fontSize = 14; 
-%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-% MAPPING INITIAL - OSCILLATIONS ENTRETENUES 
-%----------------------------------------------------------------------
-num_samples = 30 %Nombre de points pour le mapping initiale
-iterations =  100
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+% By Malena Fouillou
+%
+% Implémentation de la méthode d'échantillonnage adaptatif dans le cas d'une étude des régimes
+% de fonctionnement des instruments auto-oscillant : clarinette et violon.
+%
+% --> Elle comprend la définiton des paramètres observée souhaités : le type d'instrument, le
+%     descripteur, le type de modèle pour la simulation, les paramètres de
+%     contrôle observés etc.
+% --> L'algorithme fait appel à des fonctions Python situés dans 'run_simulation.py, 'descripteurs_utiles.py' et dans le dossier
+%     "modelisation_physique".
+%
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+%++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-modele = "modale" %modèle choisit : guide_onde ou modale
-descriptor = "are_there_oscillations"  % Descripteur à observer
-instrument ='saxophone'
+modele = "guide_onde"    % Modèle choisit : guide_onde ou modale
+descriptor = "are_there_oscillations"     % Descripteur à observer
+instrument ='corde' % Type d'instrument étudié
 
-abscisse = "gamma"
-abscisse_max = 1
-ordonnee = "zeta"
-ordonnee_max =1
+% Paramètres de contrôle 
+abscisse = "gamma" 
+abscisse_max = 1  %Étendue de l'axe
+ordonnee = "zeta" 
+ordonnee_max = 5
 
-%Chargement des paramètres des modèles
-t_max= 0.3 %durée de la simulation
-Fe = 44100 %Fréquence d'échantillonnage
-L= 0.6 %longueur du cylindre
-c = 340 
-nb_mode = 2
-durete_rampe = 200
-arg_modele= [t_max Fe L c nb_mode durete_rampe] 
+% Chargement des paramètres des modèles
+t_max= 0.3         % Durée de la simulation (secondes)
+Fe = 44100         % Fréquence d'échantillonnage (Hz)
+L= 0.6             % Longueur du cylindre (mètre)
+c = 340            % Vitesse des ondes dans l'instrument
+nb_mode = 2        % Nombre de modes considérés dans la méthode modale
+durete_rampe = 20 
+arg_modele= [t_max Fe L c nb_mode durete_rampe] % Arguments en entrée de la fonction du modèle considéré
 
-%Chargement des paramètres des descripteurs
+% Chargement des paramètres des descripteurs : fréquences harmoniques observées sur une gamme choisie
+note_frequencies = [65.41, 69.3, 73.42, 77.78, 82.41, 87.31, 92.5, 98, 103.83, 110, 116.54, 123.47, 130.8] 
+
+% Chargement des paramètres de sampling
+num_samples = 50  % Nombre de points pour le mapping initiale
+iterations =  150 % Nombre d'itérations de la méthode d'échantillonnage adaptatif
+
+
+
 if descriptor == "are_there_oscillations"
 
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    % MAPPING INITIAL - OSCILLATIONS ENTRETENUES 
-    %----------------------------------------------------------------------
-    dim1 = [0,abscisse_max] %étendue des axes, ici gamma
-    dim2 = [0,ordonnee_max]%zeta
-    epsilon = 0.1 %critère d'oscillations
+    % ECHANTILLONNAGE INITIAL - OSCILLATIONS ENTRETENUES 
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    % Paramètres descripteurs
+    dim1 = [0,abscisse_max] % Étendue des axes, ici gamma 
+    dim2 = [0,ordonnee_max] % Ici Zeta
+    epsilon = 0.6           % Critère d'amplitude d'oscillations 
     arg_descriptor= [epsilon]
-    %-------------------------------------------------------------------------
+    
     % Sélection de points au hasard : 
     X  = double(pyrunfile("mapping_initialisation.py","X", ...
                 abscisse=abscisse, ...
                 ordonnee=ordonnee, ...
                 dim1 =dim1, ...
                 dim2=dim2, ...
-                num_samples=num_samples))%Initialisation des points
-    %--------------------------------------------------------------------------
-    %Initialisation des labels : 
+                num_samples=num_samples))
+    
+    % Initialisation des labels : 
     label = transpose(double(pyrunfile("run_simulation.py","y", ...
                     X=X, ...
                     descriptor=descriptor, ...
@@ -55,15 +74,17 @@ if descriptor == "are_there_oscillations"
                     arg_descriptor=arg_descriptor, ...
                     note_frequencies=note_frequencies)))
 
-     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-     % MAPPING RAFFINÉ - OSCILLATIONS ENTRETENUES 
-     %--------------------------------------------------------------------------
-     %Calcul de sa SVM
+     
+     % Calcul de sa SVM
      svm =CODES.fit.svm(X,label);
+   
+     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+     % ECHANTILLONNAGE ADAPTATIF - OSCILLATIONS ENTRETENUES 
+     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      for i=2:iterations
-         %Calcul d'un nouveau sample
+         % Calcul d'un nouveau sample
          x_mm=CODES.sampling.mm(svm,[min(dim1) min(dim2)],[max(dim1) max(dim2)]);
-         %Calcul de son label
+         % Calcul de son label
          X_label = [X(end,:);x_mm];
          labels = transpose(double(pyrunfile("run_simulation.py","y", ...
                              X=X_label, ...
@@ -75,45 +96,55 @@ if descriptor == "are_there_oscillations"
                              arg_modele=arg_modele, ...
                              arg_descriptor=arg_descriptor, ...
                              note_frequencies=note_frequencies)))
-
+         % Ajout du nouvel échantillon au mapping
          label = [label;labels(end)]
          X=[X; x_mm]
-         %Calcul de la SVM raffinée
+         % Calcul de la SVM raffinée
          svm=CODES.fit.svm(X,label);
      end
+     
      figure('Position',[200 200 500 500])
      svm.isoplot
-     title("\bf Oscillations mapping pour le/la "+ instrument, 'FontSize', fontSize)
-     xlabel('{\bf Gamma}', 'FontSize', fontSize)
-     ylabel('{\bf Zeta}', 'FontSize', fontSize)
+     % title("\bf Oscillations mapping pour le/la "+ instrument, 'FontSize', fontSize)
+     xlabel('{\bf \gamma}', 'FontSize', fontSize)
+     ylabel('{\bf \zeta}', 'FontSize', fontSize)
+     fontsize(gca, 12,'points') 
+     legend('Location','northeast','NumColumns',2, 'Interpreter','latex')
      save('X.mat','X')
      save('labels.mat','label')
 
+
+
 elseif descriptor == "pitch"
-    note_frequencies = [65.41, 69.3, 73.42, 77.78, 82.41, 87.31, 92.5, 98, 103.83, 110, 116.54, 123.47, 130.8] %fréquences harmoniques
-    freq_ = [1 2 3 4 5 6 7 8 9 10 11 12 13] %Fréquences observées pour la classification one VS all
-    zeta = 0.5 %zeta constant 
-    epsilon_length = 0.05 
-    osc_threshold = 0.15 % threshold to decide whether there are oscillations or not
-    cents_threshold = 15 %marge 
-    dim1 = [0.1,abscisse_max] %valeurs de gamma
+    
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    % ECHANTILLONNAGE INITIAL : PITCH
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    indices_freq_ = [11] % Fréquences observées pour la classification one VS all
+    zeta = 0.5  % Zeta constant 
+    epsilon_length = 0.05     % Marge de longueurde l'instrument
+    osc_threshold = 0.6       % Critère d'oscillations (ou non)
+    cents_threshold = 15      % Différence maximale en cent par rapport à la note de référence 
+    dim1 = [0.1,abscisse_max] % Valeurs de gamma
     dim2 = [ c/(4*note_frequencies(end))-epsilon_length,  c/(4*note_frequencies(1))+epsilon_length]
 
     figure('Position',[200 200 500 500])
+    
+    % Boucle sur chaque fréquence observée de la gamme harmonique
+    for i=1:length(indices_freq_)
 
-    for i=1:length(freq_)
-        freq__ = freq_(i)
-        %--------------------------------------------------------------------------
+        freq__ = indices_freq_(i)
+       
         % Sélection de points au hasard : 
-        arg_descriptor= [Fe osc_threshold cents_threshold zeta freq__] 
+        arg_descriptor= [Fe osc_threshold cents_threshold zeta ] 
         X  = double(pyrunfile("mapping_initialisation.py","X", ...
                     abscisse=abscisse, ...
                     ordonnee=ordonnee, ...
                     dim1 =dim1, ...
                     dim2=dim2, ...
                     num_samples=num_samples))%Initialisation des points
-        %--------------------------------------------------------------------------
-        %Initialisation des labels : 
+        
+        % Initialisation des labels : 
         label = transpose(double(pyrunfile("run_simulation.py","y", ...
                             X=X, ...
                             descriptor=descriptor, ...
@@ -124,26 +155,29 @@ elseif descriptor == "pitch"
                             arg_modele=arg_modele, ...
                             arg_descriptor=arg_descriptor, ...
                             note_frequencies=note_frequencies)))
-
-        for j=1:length(label)
+        
+        for j=1:length(label) % Calcul des labels de la forme one VS all
             if label(j) ~=freq__               
                 label(j)= 0
             end
         end
 
-        if sum(label)==0 
+        if sum(label)==0 % Si la fréquence observée n'est pas trouvé (tous les labels =0) l'algorithme passe
+                         % à la suivante, sinon il suit à la méthode
+                         % d'échantillonnage adaptatif
             continue
         else 
-            %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            % MAPPING RAFFINÉ - OSCILLATIONS ENTRETENUES 
-            %--------------------------------------------------------------------------
-            %Calcul de sa SVM
+
+            % Calcul de sa SVM
             svm =CODES.fit.svm(X,label);
+
+            %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+            % ECHANTILLONNAGE ADAPTATIF : PITCH
+            %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             for n=2:iterations
-                %Calcul d'un nouveau sample
+                % Calcul d'un nouveau sample
                 x_mm=CODES.sampling.mm(svm,[min(dim1) min(dim2)],[max(dim1) max(dim2)]);
-                %Calcul de son label
+                % Calcul de son label
                 X_label = [X(end,:);x_mm];
                 labels = transpose(double(pyrunfile("run_simulation.py","y", ...
                                     X=X_label, ...
@@ -161,28 +195,39 @@ elseif descriptor == "pitch"
                         label(j)= 0
                    end
                 end  
-
+                % Ajout du nouvel échantillon au mapping
                 label = [label;labels(end)]
                 X=[X; x_mm]
                 %Calcul de la SVM raffinée
                 svm=CODES.fit.svm(X,label);    
             end
+            
             hold on
             svm.isoplot
+            save('X_11.mat','X')
+            save('labels_11.mat','label')
         end
+        
     end
 
     %{
-    freq0 = 0
+    % Cas particulier de la première fréquence observée (
+    % note_frequencies(1))
+    % telle que la fonction labels de 'run_simulation.py' renvoie idx = 0.
+    freq0 = 0 
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    % ECHANTILLONNAGE INITIAL : PITCH
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++    
+    % Sélection de points au hasard : 
     X  = double(pyrunfile("mapping_initialisation.py","X", ...
         abscisse=abscisse, ...
         ordonnee=ordonnee, ...
         dim1 =dim1, ...
         dim2=dim2, ...
         num_samples=num_samples))%Initialisation des points  
-    arg_descriptor= [Fe osc_threshold cents_threshold zeta freq0] 
-    %--------------------------------------------------------------------------
-    %Initialisation des labels : 
+    arg_descriptor= [Fe osc_threshold cents_threshold zeta] 
+    
+    % Initialisation des labels : 
     label = transpose(double(pyrunfile("run_simulation.py","y", ...
                       X=X, ...
                       descriptor=descriptor, ...
@@ -194,21 +239,25 @@ elseif descriptor == "pitch"
                       arg_descriptor=arg_descriptor, ...
                       note_frequencies=note_frequencies)))
 
-    for j=1:length(label)
-        if label(j) ~=0 
+    for j=1:length(label) % Calcul des labels sous la forme  one VS all
+        if label(j) ~=freq0 
             label(j) =1
         end
     end
 
-    if sum(label)~=length(label)
-        svm =CODES.fit.svm(X,label);
-        for i=2:80
-        
-            %Calcul d'un nouveau sample
-            x_mm=CODES.sampling.mm(svm,[min(dim1) min(dim2)],[max(dim1) max(dim2)]);
-            %Calcul de son label
-            X_label = [X(end,:);x_mm];
-            labels = transpose(double(pyrunfile("run_simulation.py","y", ...
+    % Calcul de sa SVM
+    svm =CODES.fit.svm(X,label);
+
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    % ECHANTILLONNAGE ADAPTATIF : PITCH
+    %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    for i=2:iterations
+
+        % Calcul d'un nouveau sample
+        x_mm=CODES.sampling.mm(svm,[min(dim1) min(dim2)],[max(dim1) max(dim2)]);
+        % Calcul de son label
+        X_label = [X(end,:);x_mm];
+        labels = transpose(double(pyrunfile("run_simulation.py","y", ...
                                  X=X_label, ...
                                  descriptor=descriptor, ...
                                  abscisse=abscisse, ...
@@ -219,23 +268,26 @@ elseif descriptor == "pitch"
                                  arg_descriptor=arg_descriptor, ...
                                  note_frequencies=note_frequencies)))
         
-             for j=1:length(labels)
-                 if labels(j) ~=0 
-                     labels(j)=1
-                 end
-             end                
-             label = [label;labels(end)]
-             X=[X; x_mm]
-             %Calcul de la SVM
-             svm=CODES.fit.svm(X,label);  
-        end
-        hold on
-        svm.isoplot
-    end
-    %}
-
-    title('{\bf Oscillations mapping pour }'+instrument, 'FontSize', fontSize)
+         for j=1:length(labels) % Calcul des labels pour obtenir le cas one VS
+         %all 
+             if labels(j) ~=freq0
+                 label(j) =1
+             end
+         end 
+         % Ajout du nouvel échantillon au mapping
+         label = [label;labels(end)]
+         X=[X; x_mm]
+         % Calcul de la SVM raffinée
+         svm=CODES.fit.svm(X,label);  
+     end
+     
+    hold on
+    svm.isoplot
+    save('X_0.mat','X')
+    save('labels_0.mat','label')
+    
     xlabel(abscisse, 'FontSize', fontSize)
     ylabel(ordonnee, 'FontSize', fontSize)
+    %}
 end
 

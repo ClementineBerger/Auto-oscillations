@@ -13,19 +13,137 @@ th, td {
     Auto-oscillations des instruments de musique : modèles, simulations, descripteurs et cartographies
 </h1>
 
-<p>
+<h2>
     Projet de recherche dans le cadre du master ATIAM
-</p>
+</h2>
 
+<h3>
+    Clarinette
+</h3>
+
+<p> À gauche : guide d'onde, à droite : modèle modal. </p>
 <p>
-    Ceci est un test =)
+    l = 60e-2 m <br> c0 = 340 m/s
 </p>
 
+<h4>
+    Variations en fonction de gamma.
+</h4>
 
+<p> gamma = 0.2 ; zeta = 0.4 </p>
 <audio id="audio-player" controls>
-    <source src="./audio/test.wav" type="audio/mpeg">
+    <source src="./audio/GOgamma2_zeta4_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
+<audio id="audio-player" controls>
+    <source src="./audio/MOgamma2_zeta4_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+ 
+<img src="./audio/gamma2_zeta4_l60.png" alt="waveforms" width="600" height="240">
+
+<p> gamma = 0.6 ; zeta = 0.4 </p>
+<audio id="audio-player" controls>
+    <source src="./audio/GOgamma6_zeta4_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<audio id="audio-player" controls>
+    <source src="./audio/MOgamma6_zeta4_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+ 
+<img src="./audio/gamma6_zeta4_l60.png" alt="waveforms" width="600" height="240">
+
+<p> gamma = 0.9 ; zeta = 0.4 </p>
+<audio id="audio-player" controls>
+    <source src="./audio/GOgamma9_zeta4_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<audio id="audio-player" controls>
+    <source src="./audio/MOgamma9_zeta4_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+ 
+<img src="./audio/gamma9_zeta4_l60.png" alt="waveforms" width="600" height="240">
+
+<h4>
+    Variations en fonction de zeta.
+</h4>
+
+<p> gamma = 0.6 ; zeta = 0.1 -> La clarinette quintoie (avec le modèle modal)</p>
+<audio id="audio-player" controls>
+    <source src="./audio/GOgamma6_zeta1_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<audio id="audio-player" controls>
+    <source src="./audio/MOgamma6_zeta1_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+ 
+<img src="./audio/gamma6_zeta1_l60.png" alt="waveforms" width="600" height="240">
+
+<p> gamma = 0.6 ; zeta = 0.3 </p>
+<audio id="audio-player" controls>
+    <source src="./audio/GOgamma6_zeta3_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<audio id="audio-player" controls>
+    <source src="./audio/MOgamma6_zeta3_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+ 
+<img src="./audio/gamma6_zeta3_l60.png" alt="waveforms" width="600" height="240">
+
+<p> gamma = 0.6 ; zeta = 0.6 </p>
+<audio id="audio-player" controls>
+    <source src="./audio/GOgamma6_zeta6_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<audio id="audio-player" controls>
+    <source src="./audio/MOgamma6_zeta6_l60.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+ 
+<img src="./audio/gamma6_zeta6_l60.png" alt="waveforms" width="600" height="240">
+
+
+<h3>
+    Violon (corde de sol)
+</h3>
+<h4>
+    Guide d'onde :  variations en fonction de vb = gamma
+</h4>
+<p>
+    l = 33e-2 m <br> beta = 0.3 <br> Fb = 1 N
+</p>
+<p> vb = 0.2</p>
+<audio id="audio-player" controls>
+    <source src="./audio/cordes_GOgamma2_zeta10_l33.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<img src="./audio/cordes_gamma2_zeta10_l33.png" alt="waveforms" width="600" height="120">
+
+<p> vb = 0.4</p>
+<audio id="audio-player" controls>
+    <source src="./audio/cordes_GOgamma4_zeta10_l33.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<img src="./audio/cordes_gamma4_zeta10_l33.png" alt="waveforms" width="600" height="120">
+
+<p> vb = 0.5</p>
+<audio id="audio-player" controls>
+    <source src="./audio/cordes_GOgamma5_zeta10_l33.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<img src="./audio/cordes_gamma5_zeta10_l33.png" alt="waveforms" width="600" height="120">
+
+<p> vb = 0.6</p>
+<audio id="audio-player" controls>
+    <source src="./audio/cordes_GOgamma6_zeta10_l33.wav" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+<img src="./audio/cordes_gamma6_zeta10_l33.png" alt="waveforms" width="600" height="120">
+
 
 </body>
 </html>
