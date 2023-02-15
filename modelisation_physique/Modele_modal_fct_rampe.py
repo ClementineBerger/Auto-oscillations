@@ -101,7 +101,7 @@ def RK4_adapt(X, tmax, nb_mode, sample_rate, args, vecs, vio):        #Order 4, 
 
         #--------------- Condition over precision
         if np.abs(np.add(sum(impair*X),-sum(impair*X1)))<1e-10 or np.abs(sum(impair*X))>1e50:
-            X=0*impair;
+            X=0*impair
             return x2
         
         x2[i+1] = sum(impair*X)                           # Put the sum of X in the output signal
@@ -191,7 +191,7 @@ def play(y, Fe=44100):
 #------------------------------------------------ Fonction faisant tourner le modèle
 
 def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo, 
-               zeta_force,durete_rampe, l_resonateur,
+               zeta_force,durete_rampe, l_resonateur,rampe=False,
                fig = False, sound = False
                ):
     
@@ -208,18 +208,19 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
     #----------------------------------------- Rampe
     
     # Faire varier durete_rampe entre 20 (pente douce) et 2000 (pente raide)
-    
-    gammas = np.arctan(np.linspace(0.1, durete_rampe, len(time)))\
+    if rampe :
+        gammas = np.arctan(np.linspace(0.1, durete_rampe, len(time)))\
              *gamma_velo/(np.arctan(durete_rampe)) # Définition de gamma_velo au cours du temps de la simulation
-    
+    else :
+        gammas = gamma_velo*np.ones(len(time))
     
     #----------------------------------------- Instrument choice
     
     if instrument == 'clarinette':
         #--------------------------------------------------------------------Clarinette
-        rayon_pavillon = 2e-2;
+        rayon_pavillon = 2e-2
         #------------------------------------------Sélection de fonction
-        func = func_anche_simple;
+        func = func_anche_simple
         
         #------------------------------------------Admittances
         #Y_m = np.ones(nb_mode)*1 /1233.36096998528                    #Initialisation de toutes les admittances à une valeur par défaut
@@ -227,7 +228,7 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
         #------------------------------------------Fréquences
         freq = np.zeros(nb_mode)                                    #Initialisation générale fréquences des modes
         #l_effectif = l_resonateur                                    #Cas Clarinette Zs=0
-        l_effectif = l_resonateur + (8*rayon_pavillon/(3*np.pi))      #Cas Clarinette bafflée
+        l_effectif = l_resonateur #+ (8*rayon_pavillon/(3*np.pi))      #Cas Clarinette bafflée
         #l_effectif = l_resonateur + 0.6*rayon_pavillon               #Cas Clarinette non bafflée
         freq = (2*np.arange(nb_mode) + 1)*c0/(4*l_effectif)         #Cas particulier de la clarinette (quintoie)
         omega = freq*2*np.pi                                        #Conversion freq/puls
@@ -239,14 +240,14 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
         #--------------------------------------------------------------------Saxophone
         rayon_pavillon = 6e-2
         #------------------------------------------Sélection de fonction
-        func = func_anche_simple;
+        func = func_anche_simple
         
         #------------------------------------------Admittances
         Y_m = np.ones(nb_mode)*1 /1233.36096998528                  #Initialisation de toutes les admittances à une valeur par défaut
         #------------------------------------------Fréquences
         freq = np.zeros(nb_mode)                                    #Initialisation générale fréquences des modes
         #l_effectif = l_resonateur                                    #Cas Zs=0
-        l_effectif = l_resonateur + (8*rayon_pavillon/(3*np.pi))      #Cas bafflé
+        l_effectif = l_resonateur #+ (8*rayon_pavillon/(3*np.pi))      #Cas bafflé
         #l_effectif = l_resonateur + 0.6*rayon_pavillon               #Cas non bafflé
         freq = np.arange(1, nb_mode + 1)*c0/(2*l_effectif)          #Cas particulier du Sax (octavie)
         omega = freq*2*np.pi                                        #Conversion freq/puls
@@ -258,33 +259,35 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
     
         #--------------------------------------------------------------------Violin
         #----------------------------------------- Parameters
-        diametre_corde = 1.35e-3;
+        diametre_corde = 1.35e-3
         
-        tension_corde = 51.9*1.14;
-        sigma = 1.8;
-        position_archet = 10e-2;
+        tension_corde = 51.9 #*1.14
+        sigma = 1.8
+        position_archet = 0.3*l_resonateur      #10e-2
         #position_archet = 3e-2;
-        mass_vol_corde = 3.1e-3 / (np.pi*(0.8e-3 /2)**2);
-        young_corde = 5e9;
-        moment_quad_corde = 2.01e-14;
+        mass_vol_corde = 3.1e-3  #/ (np.pi*(0.8e-3 /2)**2)
+        young_corde = 5e9
+        moment_quad_corde = 2.01e-14
         #coef_frott_dyn_corde = 0.2;
-        coef_frott_dyn_corde = 0.35;
-        c0 = np.sqrt(tension_corde/(mass_vol_corde*np.pi*(diametre_corde/2)**2));               # Sound speed
+        coef_frott_dyn_corde = 0.35
+        c0 = np.sqrt(tension_corde/(mass_vol_corde))  #*np.pi*(diametre_corde/2)**2))               # Sound speed
         #Les valeurs numériques sont extraites de la thèse de Vigué
         
         
         #------------------------------------------Sélection de fonction
-        func = func_violon;
+        func = func_violon
         
         
         #------------------------------------------Fréquences
         freq = np.zeros(nb_mode)                                      #Initialisation générale fréquences des modes
 
-        freq = (np.arange(1, nb_mode + 1)*np.pi)/(2*l_resonateur)\
-               *np.sqrt(tension_corde/(mass_vol_corde*(np.pi*(diametre_corde/2)**2)))\
-               *np.sqrt(1 + ((young_corde*moment_quad_corde/(2*tension_corde))
-                           *(np.arange(1, nb_mode + 1)**2*np.pi**2
-                             /(l_resonateur**2)))) 
+        #freq = (np.arange(1, nb_mode + 1)*np.pi)/(2*l_resonateur)\
+               #*np.sqrt(tension_corde/(mass_vol_corde*(np.pi*(diametre_corde/2)**2)))\
+               #*np.sqrt(1 + ((young_corde*moment_quad_corde/(2*tension_corde))
+                           #*(np.arange(1, nb_mode + 1)**2*np.pi**2
+                             #/(l_resonateur**2)))) 
+        
+        freq = np.arange(1, nb_mode + 1)*c0/(2*l_resonateur)
                
         omega = freq*2*np.pi                  #Conversion freq/puls
         
@@ -353,7 +356,7 @@ def simulation(tmax, nb_mode, instrument, sample_rate, gamma_velo,
 if __name__ == "__main__":
 
     
-    plt.close();
+    plt.close()
     
     #------------------------------------------------ Lancement du modèle
     
