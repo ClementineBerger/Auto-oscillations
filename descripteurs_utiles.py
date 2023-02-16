@@ -43,13 +43,14 @@ def are_there_oscillations(waveform, epsilon):
     True or False selon la condition : y-a-t-il oscillation ou non ?
     """
     
-    N2_3 = int(len(waveform) / 3) #Intervalle d'observation du signal, choisi au dernier tier du temps de simulation
-    
-    waveform[N2_3:] = waveform[N2_3:] -np.mean(waveform[N2_3:]) #centrage en zéro du signal
-
-    waveform[N2_3:] = waveform[N2_3:]/np.max(waveform[N2_3:]) #Normalisation du signal observé
-
-    criterion = np.mean(np.abs(waveform[N2_3:])) #Calcul de la moyenne du signal normalisé      
+    N2_3 = int(len(waveform) / 3)                #Intervalle d'observation du signal, choisi au dernier tier du temps de simulation
+     
+    waveform_ = waveform[N2_3:]                  #Zone du signal à observer
+    waveform_ = waveform_- np.mean(waveform_)     #Centrage en zéro
+    waveform_= waveform_/np.max(np.abs(waveform_))       #Normalisation
+  
+    criterion = np.mean(np.abs(waveform_))       #Calcul de la moyenne du signal  
+     
     return criterion > epsilon 
 
 
@@ -61,7 +62,7 @@ def get_f0(waveform, sr, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz(
     then the final F0 is obtained using the mean of the last 2/3 frames.
     """
     
-    n_1_3 = int(np.rint(len(waveform) / 3)) #Intervalle d'observation du signal
+    n_1_3 = int(np.rint(len(waveform) / 3))                         #Intervalle d'observation du signal
     f0 = librosa.yin(waveform[n_1_3:], fmin=fmin, fmax=fmax, sr=sr) #Fréquence fondamentale du signal observé
     return np.mean(f0[1:])
 
@@ -77,7 +78,7 @@ def f0_to_categorical(f0, ref_frequencies, epsilon):
         epsilon (int): Theshold in cents
     """
     
-    n_cents = np.abs(1200 * np.log(f0 / ref_frequencies)) #écart entre fréquence fondamentale du signal et celles de référence
+    n_cents = np.abs(1200 * np.log(f0 / ref_frequencies))           #Écart entre fréquence fondamentale du signal et celles de référence
     idx = np.argmin(n_cents)
     if n_cents[idx] > epsilon:
         return False, None
