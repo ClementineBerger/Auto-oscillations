@@ -58,9 +58,9 @@ def coeffs_modaux_bois(c0, l, rc, damping=False,ray=False):
     else :
         Ze = B/D
         
-    peaks,_ = sig.find_peaks(np.real(Ze))
+    peaks,_ = sig.find_peaks(np.abs(Ze))
 
-    Ym = 1/np.real(Ze)[peaks]
+    Ym = 1/np.abs(Ze)[peaks]
     fr_m = f[peaks]
     
     Fm = 2*c0/l
@@ -124,13 +124,13 @@ def Fcordes(v,n,gamma,zeta):
 
 ### Dérivées des fonctions caractéristiques
 
-def deriveeBois(p,pprim,gamma,zeta):
-    if gamma == 0:
-        return np.zeros(len(p))
-    else:
-        valid = (gamma - p < 1) & (gamma - p > 0)
-        derivee = valid * (zeta * np.nan_to_num(np.sqrt(gamma-p)) + zeta*(1-gamma+p)*(-1/2/np.nan_to_num(np.sqrt(gamma-p))))
-    return pprim*derivee
+#def deriveeBois(p,pprim,gamma,zeta):
+#    if gamma == 0:
+#        return np.zeros(len(p))
+#    else:
+#        valid = (gamma - p < 1) & (gamma - p > 0)
+#        derivee = valid * (zeta * np.nan_to_num(np.sqrt(gamma-p)) + zeta*(1-gamma+p)*(-1/2/np.nan_to_num(np.sqrt(gamma-p))))
+#    return pprim*derivee
 
 def deriveeCordes(v,vprim,gamma,zeta):
     alpha = np.sqrt(mu_s*(mu_s-mu_d))
@@ -157,18 +157,19 @@ def clarinette(
     fig=False,
     sound=False,
 ):
-    Fm, Ym, fr_m = coeffs_modaux_bois(c0=c0,l=l)
+    Fm, Ym, fr_m = coeffs_modaux_bois(c0=c0,rc=rc,l=l)
     omega = 2*np.pi*fr_m
 
     Nsim = int(t_max*sample_rate)
     tps = np.linspace(0,Nsim/sample_rate,Nsim)
+    
+    F0, A, B, C = coeffs_F(gamma, zeta)
 
     def deriv_nbmodes(t,X):
-        Xprim = np.zeros(nb_modes*2) 
+        derivF = np.sum(X[1::2])*(A + 2*B*np.sum(X[0::2]) + 3*C*np.sum(X[0::2])**2)
+        Xprim = np.zeros(nb_modes*2)                                       
+        Xprim[1::2] = Fm*derivF - Ym[0:nb_modes]*X[1::2] - np.square(omega[0:nb_modes])*X[0::2]  
         Xprim[0::2] = X[1::2]
-        
-        derivF = deriveeBois(p=np.sum(X[0::2]),pprim=np.sum(X[1::2]),gamma=gamma,zeta=zeta)
-        Xprim[1::2] = - Ym[0:nb_modes]*X[1::2] - np.square(omega[0:nb_modes])*X[0::2] + Fm*derivF
         return Xprim
     
     X0 = np.zeros(2*nb_modes)
@@ -204,7 +205,7 @@ def cordes(
     
     n = 25
     
-    Fm, Ym, fr_m = coeffs_modaux_cordes(c0=c0_cordes,l=l)
+    Fm, Ym, fr_m = coeffs_modaux_cordes(c0=c0_cordes,l=l,beta=beta)
     omega = 2*np.pi*fr_m
 
     Nsim = int(t_max*sample_rate)
@@ -214,7 +215,7 @@ def cordes(
         Xprim = np.zeros(nb_modes*2) 
         Xprim[0::2] = X[1::2]
         
-        derivF = deriveeCordes(p=np.sum(X[0::2]),pprim=np.sum(X[1::2]),gamma=gamma,zeta=zeta)
+        derivF = deriveeCordes(v=np.sum(X[0::2]),vprim=np.sum(X[1::2]),gamma=gamma,zeta=zeta)
         Xprim[1::2] = - Ym[0:nb_modes]*X[1::2] - np.square(omega[0:nb_modes])*X[0::2] + Fm*derivF
         return Xprim
     
@@ -284,4 +285,7 @@ def modal(
         print("Mauvais nom d'instrument : 'clarinette' ou 'corde' ")
         return 0
     
-    
+#t_max = 1
+#sample_rate = 22050
+
+#p,_,tps = clarinette(t_max=t_max,sample_rate=sample_rate,nb_modes=1,gamma=0.5,zeta=0.4,l=60e-2,c0=340)
