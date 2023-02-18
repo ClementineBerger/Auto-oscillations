@@ -69,7 +69,7 @@ def coeffs_modaux_bois(c0, l, rc, damping=False,ray=False):
 
 def coeffs_modaux_cordes(c0,l,beta):
     
-    f = np.linspace(20,10000,5000)
+    f = np.linspace(20,20000,10000)
     om = 2*np.pi*f
     k = om/c0
     
@@ -117,7 +117,7 @@ def Fclarinette(list_p, gamma, zeta):
     return u
 
 def Fcordes(v,n,gamma,zeta):
-    dv = gamma - n
+    dv = gamma - v
     alpha = np.sqrt(mu_s*(mu_s-mu_d))
     eps = 1e-4
     return zeta*(mu_d*dv*np.sqrt(dv**2 + eps/(n**2))+2*alpha*dv/n)/(dv**2 + 1/(n**2))
@@ -158,6 +158,7 @@ def clarinette(
     sound=False,
 ):
     Fm, Ym, fr_m = coeffs_modaux_bois(c0=c0,rc=rc,l=l)
+    #fr_m = (2*np.arange(0,len(Ym))+1)*c0/l/4
     omega = 2*np.pi*fr_m
 
     Nsim = int(t_max*sample_rate)
@@ -206,6 +207,9 @@ def cordes(
     n = 25
     
     Fm, Ym, fr_m = coeffs_modaux_cordes(c0=c0_cordes,l=l,beta=beta)
+    print(Fm)
+    print(fr_m)
+    print(c0_cordes)
     omega = 2*np.pi*fr_m
 
     Nsim = int(t_max*sample_rate)
