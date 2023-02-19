@@ -19,5 +19,12 @@ h4{
 }
 
 body {
-    background-color: #f1e4e1;
+    background-color: #ededed;
 }
+
+.center {
+    border: 5px solid;
+    margin: auto;
+    width: 50%;
+    padding: 10px;
+  }
