@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+<link rel="stylesheet" href="fonts.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@100;600;700;900&display=swap" rel="stylesheet">
+
 <style>
 th, td {
     text-align:center;
@@ -31,6 +37,8 @@ th, td {
 </h4>
 
 <p> gamma = 0.2 ; zeta = 0.4 </p>
+<img src="./audio/gamma2_zeta4_l60.png" alt="waveforms" width="600" height="240">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/GOgamma2_zeta4_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -39,10 +47,11 @@ th, td {
     <source src="./audio/MOgamma2_zeta4_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
- 
-<img src="./audio/gamma2_zeta4_l60.png" alt="waveforms" width="600" height="240">
+
 
 <p> gamma = 0.6 ; zeta = 0.4 </p>
+<img src="./audio/gamma6_zeta4_l60.png" alt="waveforms" width="600" height="240">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/GOgamma6_zeta4_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -52,9 +61,11 @@ th, td {
     Your browser does not support the audio element.
 </audio>
  
-<img src="./audio/gamma6_zeta4_l60.png" alt="waveforms" width="600" height="240">
+
 
 <p> gamma = 0.9 ; zeta = 0.4 </p>
+<img src="./audio/gamma9_zeta4_l60.png" alt="waveforms" width="600" height="240">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/GOgamma9_zeta4_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -64,13 +75,15 @@ th, td {
     Your browser does not support the audio element.
 </audio>
  
-<img src="./audio/gamma9_zeta4_l60.png" alt="waveforms" width="600" height="240">
+
 
 <h4>
     Variations en fonction de zeta.
 </h4>
 
 <p> gamma = 0.6 ; zeta = 0.1 -> La clarinette quintoie (avec le modèle modal)</p>
+<img src="./audio/gamma6_zeta1_l60.png" alt="waveforms" width="600" height="240">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/GOgamma6_zeta1_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -80,9 +93,10 @@ th, td {
     Your browser does not support the audio element.
 </audio>
  
-<img src="./audio/gamma6_zeta1_l60.png" alt="waveforms" width="600" height="240">
 
 <p> gamma = 0.6 ; zeta = 0.3 </p>
+<img src="./audio/gamma6_zeta3_l60.png" alt="waveforms" width="600" height="240">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/GOgamma6_zeta3_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -92,9 +106,10 @@ th, td {
     Your browser does not support the audio element.
 </audio>
  
-<img src="./audio/gamma6_zeta3_l60.png" alt="waveforms" width="600" height="240">
 
 <p> gamma = 0.6 ; zeta = 0.6 </p>
+<img src="./audio/gamma6_zeta6_l60.png" alt="waveforms" width="600" height="240">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/GOgamma6_zeta6_l60.wav" type="audio/mpeg">
     Your browser does not support the audio element.
@@ -104,7 +119,6 @@ th, td {
     Your browser does not support the audio element.
 </audio>
  
-<img src="./audio/gamma6_zeta6_l60.png" alt="waveforms" width="600" height="240">
 
 
 <h3>
@@ -114,43 +128,48 @@ th, td {
     Méthode modale
 </h4>
 <p>
-    l = 33e-2 m <br> beta = 0.3 <br> Fb = 5 N
+    l = 33e-2 m <br> beta = 0.3 <br> Fb = 5 N <br> Nombre de modes : 25
 </p>
 
 <p> vb = 0.01 m/s </p>
+<img src="./audio/cordes_MOgamma0_zeta50_l33.png" alt="waveforms" width="600" height="120">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/cordes_MOgamma0_zeta50_l33.wav" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
-<img src="./audio/cordes_MOgamma0_zeta50_l33.png" alt="waveforms" width="600" height="120">
 
 <p> vb = 0.1 m/s </p>
+<img src="./audio/cordes_MOgamma1_zeta50_l33.png" alt="waveforms" width="600" height="120">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/cordes_MOgamma1_zeta50_l33.wav" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
-<img src="./audio/cordes_MOgamma1_zeta50_l33.png" alt="waveforms" width="600" height="120">
 
 <p> vb = 0.2 m/s </p>
+<img src="./audio/cordes_MOgamma2_zeta50_l33.png" alt="waveforms" width="600" height="120">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/cordes_MOgamma2_zeta50_l33.wav" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
-<img src="./audio/cordes_MOgamma2_zeta50_l33.png" alt="waveforms" width="600" height="120">
 
 <p> vb = 0.6 m/s </p>
+<img src="./audio/cordes_MOgamma6_zeta50_l33.png" alt="waveforms" width="600" height="120">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/cordes_MOgamma6_zeta50_l33.wav" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
-<img src="./audio/cordes_MOgamma6_zeta50_l33.png" alt="waveforms" width="600" height="120">
 
 <p> vb = 1 m/s </p>
+<img src="./audio/cordes_MOgamma10_zeta50_l33.png" alt="waveforms" width="600" height="120">
+<br>
 <audio id="audio-player" controls>
     <source src="./audio/cordes_MOgamma10_zeta50_l33.wav" type="audio/mpeg">
     Your browser does not support the audio element.
 </audio>
-<img src="./audio/cordes_MOgamma10_zeta50_l33.png" alt="waveforms" width="600" height="120">
 
 
 </body>
