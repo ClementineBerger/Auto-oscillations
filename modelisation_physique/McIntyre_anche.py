@@ -2,19 +2,17 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
-sample_rate = 44100
-F0 = 440 # fréquence supposée de l'instrument, en Hz
-t_max = .1 # durée de la simulation, en s
+"""
+Chaigne et Kergomard
 
-T = 1/F0 # période supposée de l'instrument, en s
-i_T = int(sample_rate*T) # période supposée de l'instrument, en nb échantillon
-r_dt = np.array([0]*i_T+[1])
-r_dt = -0.95*r_dt/np.sum(r_dt)
+u = F(p) : OK ça on l'avait déjà
+my"+ay'+y=-H dp/p_m   qui devient simplement y = -H (p-p_m)/p_m
+u = r*p + S.dl/H p_m/rho.c² dy/dt
+donne u = r*p - cte.dp/dt
 
-nt = int(t_max*sample_rate)
-n_F = 201
-
-tableau_des_temps = np.linspace(0, t_max, nt)
+Pour une anche lippale, le -H dp/p_m devient +H dp/p_m
+omega_anche est beaucoup plus grand que la fréquence de jeu
+"""
 
 def resoudre(tableau, i):
     """
@@ -47,6 +45,11 @@ def embouche(X,t, gamma_F,flux_F, gamma_t,flux_t, m,a):
     Cette fonction calcule X' en fonction de X et t
     Mais aussi, par effet de bord, elle stocke gamma et flux dans les tableaux gamma_t et flux_t,
     afin que leurs valeurs puissent être réutilisées (réflexion, tout ça)
+    Pour l'instant : m.p" + a.p' + p = q + f
+
+    Chaigne et Kergomard :
+    f = F(p) et f = r*p - cte.p'
+    donc cte.p' = q+f
     """
     (p,p1) = X
 
@@ -68,6 +71,8 @@ def embouche(X,t, gamma_F,flux_F, gamma_t,flux_t, m,a):
             f = flux_F[i_p]
         except:
             f = 0
+            p = max(p,-1)
+            p = min(p,1)
         flux_t[i_t]=f
         gamma_t[i_t]=p
     else:
@@ -93,7 +98,7 @@ def embouchure(gamma_m, zeta0, omega, Q):
 
     solve = odeint(la_fonction, (0,0), tableau_des_temps)
     
-    return gamma_t[:nt]
+    return solve[:,0]
 
 def amplitude(pression):
     nt = len(pression)
@@ -144,20 +149,30 @@ def simulation(
     return gamma_t
 
 
-"""
+sample_rate = 44100
+F0 = 440 # fréquence supposée de l'instrument, en Hz
+t_max = .2 # durée de la simulation, en s
+
+T = 1/F0 # période supposée de l'instrument, en s
+i_T = int(sample_rate*T) # période supposée de l'instrument, en nb échantillon
+r_dt = np.array([0]*i_T+[1])
+r_dt = -0.95*r_dt/np.sum(r_dt)
+
+nt = int(t_max*sample_rate)
+n_F = 201
+
+tableau_des_temps = np.linspace(0, t_max, nt)
+
 plt.subplot(2,1,1)
-for p in range(5):
-    pres = embouchure(p/5, 4224, 1)
-    plt.plot(tableau_des_temps, pres, label="p_m = "+str(p/5))
-plt.legend()
-plt.title("Clarinette")
+pres = embouchure(.5,.5,4224,1)
+plt.plot(tableau_des_temps,pres)
+plt.ylabel("pression clarinette")
 
 plt.subplot(2,1,2)
-for p in range(5):
-    pres = embouchure(p/5, 4224, 10)
-    plt.plot(tableau_des_temps, pres, label="p_m = "+str(p/5))
-plt.legend()
-plt.title("Cuivre")
+pres = embouchure(.5,.5,1056,1)
+plt.plot(tableau_des_temps,pres)
+plt.xlabel("temps")
+plt.ylabel("pression cuivre")
 
+plt.savefig("nom.pdf", transparent=True,bbox_inches = "tight")
 plt.show()
-"""
