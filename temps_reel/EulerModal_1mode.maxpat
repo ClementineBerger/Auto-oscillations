@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 35.0, 84.0, 1047.0, 705.0 ],
+		"rect" : [ 41.0, 84.0, 1047.0, 705.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -313,7 +313,7 @@
 							}
 , 							{
 								"box" : 								{
-									"code" : "// Two-steps Adams-Bashforth method\r\n\r\nderiv_pdot(p, pdot, F1, Ym1, A, B, C, omega1)\r\n{\r\n\treturn -F1*((Ym1-A)-2*B*p-3*C*pow(p, 2))*pdot - pow(omega1, 2)*p;\r\n}\r\n\r\nHistory p(0.1);\r\nHistory pdot(0.0);\r\n\r\nA = in2;\r\nB = in3;\r\nC = in4;\r\ndt = 1/SAMPLERATE;\r\nEPS = 0.0001;\r\ngate = (A < EPS) || (abs(B) < EPS) || (abs(C) < EPS);\r\n\r\nout1 = p;\r\nout2 = pdot;\r\n\r\nnew_p = p + dt * pdot;\r\nnew_pdot = pdot + dt * deriv_pdot(p, pdot, F1, Ym1, A, B, C, omega1);\r\np = gate ? 0.1 : new_p;\r\npdot = gate ? 0.0 : new_pdot;",
+									"code" : "// Forward Euler\r\nderiv_pdot(p, pdot, F1, Ym1, A, B, C, omega1)\r\n{\r\n\treturn -F1*((Ym1-A)-2*B*p-3*C*pow(p, 2))*pdot - pow(omega1, 2)*p;\r\n}\r\n\r\nHistory p(0.1);\r\nHistory pdot(0.0);\r\n\r\nA = in2;\r\nB = in3;\r\nC = in4;\r\ndt = 1/SAMPLERATE;\r\nEPS = 0.0001;\r\ngate = (A < EPS) || (abs(B) < EPS) || (abs(C) < EPS);\r\n\r\nout1 = p;\r\nout2 = pdot;\r\n\r\nnew_p = p + dt * pdot;\r\nnew_pdot = pdot + dt * deriv_pdot(p, pdot, F1, Ym1, A, B, C, omega1);\r\np = gate ? 0.1 : new_p;\r\npdot = gate ? 0.0 : new_pdot;",
 									"fontface" : 0,
 									"fontname" : "<Monospaced>",
 									"fontsize" : 12.0,
