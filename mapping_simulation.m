@@ -12,7 +12,7 @@ fontSize = 14;
 %     - le type de modèle pour la simulation : guide d'onde ou modale
 %     - les paramètres de contrôle observés : gamma/zeta ou
 %       gamma/longueur du résonnateur
-%     - 
+%     
 %
 % --> L'algorithme fait appel à des fonctions Python situés dans 'run_simulation.py, 'descripteurs_utiles.py' et dans le dossier
 %     "modelisation_physique".
@@ -26,26 +26,27 @@ modele = "modale"                                                      % Modèle
 
 
 % Paramètres de contrôle 
-abscisse = "gamma" 
+abscisse = "beta" 
 abscisse_max = 1                                                           %Étendue de l'axe
 ordonnee = "zeta" 
-ordonnee_max = 2
+ordonnee_max = 1
 
 % Chargement des paramètres des modèles
-t_max= 0.3                                                                 % Durée de la simulation (secondes)
+t_max= 0.3                                                             % Durée de la simulation (secondes)
 Fe = 44100                                                                 % Fréquence d'échantillonnage (Hz)
-L= 0.6                                                                    % Longueur du cylindre/corde (mètre)
-c = 340                                                                    % Vitesse des ondes dans l'instrument
+L= 0.33                                                                    % Longueur du cylindre/corde (mètre)
+c = 340                                                                   % Vitesse des ondes dans l'instrument
 nb_mode = 2                                                                % Nombre de modes considérés ( dans la méthode modale )
 durete_rampe = 20                                                          % Pente d'évolution de gamma
 % Arguments en entrée de la fonction du modèle considéré : 
 arg_modele= [t_max Fe L c nb_mode durete_rampe] 
 
 % Chargement des paramètres des descripteurs : fréquences harmoniques observées sur une gamme choisie
-note_frequencies = [65.41, 69.3, 73.42, 77.78, 82.41, 87.31, 92.5, 98, 103.83, 110, 116.54, 123.47, 130.8] 
+note_frequencies = [65.41, 69.3, 73.42, 77.78, 82.41, 87.31, 92.5, 98, 103.83, 110, 116.54, 123.47, 130.8]
 
+%note_frequencies = [130.8, 138.5, 146.8, 155.5, 164.8, 174.6, 184.9, 195.9,207.6,220, 223,246.9, 261]
 % Chargement des paramètres de sampling
-num_samples = 30                                                           % Nombre de points pour le mapping initiale
+num_samples = 50                                                          % Nombre de points pour le mapping initiale
 iterations =  150                                                          % Nombre d'itérations de la méthode d'échantillonnage adaptatif
 
 if descriptor == "are_there_oscillations"
@@ -54,9 +55,9 @@ if descriptor == "are_there_oscillations"
     % ECHANTILLONNAGE INITIAL - OSCILLATIONS ENTRETENUES 
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     % Paramètres descripteurs
-    dim1 = [0.1,abscisse_max]                                              % Étendue des axes, ici gamma 
+    dim1 = [0,abscisse_max]                                              % Étendue des axes, ici gamma 
     dim2 = [0,ordonnee_max]                                                % Ici Zeta
-    epsilon = 0.6                                                          % Critère d'amplitude d'oscillations 
+    epsilon = 0.5                                                         % Critère d'amplitude d'oscillations 
     arg_descriptor= [epsilon]
     
     % Sélection de points au hasard : 
@@ -107,16 +108,15 @@ if descriptor == "are_there_oscillations"
          % Calcul de la SVM raffinée
          svm=CODES.fit.svm(X,label);
      end
-     
      figure('Position',[200 200 500 500])
      svm.isoplot
      % title("\bf Oscillations mapping pour le/la "+ instrument, 'FontSize', fontSize)
-     xlabel('{\bf \gamma}', 'FontSize', fontSize)
-     ylabel('{\bf \zeta}', 'FontSize', fontSize)
+     xlabel('{\bf \beta}', 'FontSize', fontSize)
+     ylabel('{\bf Fb}', 'FontSize', fontSize)
      fontsize(gca, 12,'points') 
      legend('Location','northeast','NumColumns',2, 'Interpreter','latex')
-     save('X.mat','X')
-     save('labels.mat','label')
+     save('X_01.mat','X')
+     save('labels_01.mat','label')
 
 
 
@@ -125,14 +125,13 @@ elseif descriptor == "pitch"
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     % ECHANTILLONNAGE INITIAL : PITCH
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    indices_freq_ = [8]                                                   % Fréquences observées pour la classification one VS all
-    zeta = 0.6                                                             % Zeta constant 
+    indices_freq_ = [1 2 3 4 5 6 7 8 9 10 11 12]                                                   % Fréquences observées pour la classification one VS all
+    zeta = 0.5                                                             % Zeta constant 
     epsilon_length = 0.05                                                  % Marge de longueurde l'instrument
-    osc_threshold = 0.6                                                    % Critère d'oscillations (ou non)
+    osc_threshold = 0.1                                                   % Critère d'oscillations (ou non)
     cents_threshold = 15                                                   % Différence maximale en cent par rapport à la note de référence 
-    dim1 = [0.1,abscisse_max]                                              % Valeurs de gamma
-    dim2 = [ c/(4*note_frequencies(end))-epsilon_length,  c/(4*note_frequencies(1))+epsilon_length]
-
+    dim1 = [0,abscisse_max]                                              % Valeurs de gamma
+    dim2 = [ c/(2*note_frequencies(end))-epsilon_length,  c/(2*note_frequencies(1))+epsilon_length]
     figure('Position',[200 200 500 500])
     
     % Boucle sur chaque fréquence observée de la gamme harmonique
@@ -168,7 +167,7 @@ elseif descriptor == "pitch"
         end
 
         if sum(label)==0                                                   % Si la fréquence observée n'est pas trouvé
-                                                                           % (tous les labels       =0), l'algorithme passe
+                                                                           % (tous les labels=0), l'algorithme passe
                                                                            % à la suivante, sinon il suit à la méthode
                                                                            % d'échantillonnage adaptatif
             continue
@@ -198,7 +197,7 @@ elseif descriptor == "pitch"
     
                 for j=1:length(label)
                    if label(j) ~=freq__    
-                        label(j)= 0
+                        label(j)= 0 
                    end
                 end  
                 % Ajout du nouvel échantillon au mapping
@@ -210,10 +209,16 @@ elseif descriptor == "pitch"
             
             hold on
             svm.isoplot
-            save('X_11.mat','X')
-            save('labels_11.mat','label')
+            for j=1:length(label)
+                   if label(j) ~=freq__    
+                        label(j)= 0 
+                   end
+            end  
+            save('X_14.mat','X')
+            save('label_14.mat','label')
+
         end
-        
+      
     end
 
     %{
@@ -296,4 +301,3 @@ elseif descriptor == "pitch"
     ylabel(ordonnee, 'FontSize', fontSize)
     %}
 end
-
