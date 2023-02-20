@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 35.0, 84.0, 1131.0, 705.0 ],
+		"rect" : [ 35.0, 84.0, 1468.0, 705.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -556,7 +556,7 @@
 						}
 ,
 						"classnamespace" : "dsp.gen",
-						"rect" : [ 803.0, 84.0, 699.0, 697.0 ],
+						"rect" : [ 35.0, 84.0, 1131.0, 705.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -681,7 +681,7 @@
 							}
 , 							{
 								"box" : 								{
-									"code" : "// Forward Euler\r\nderiv_pdot(sum_p, sum_pdot, p, pdot, Fm, Ym, A, B, C, omega)\r\n{\r\n\tderivF = sum_pdot * (A + 2*B*sum_p + 3*C*pow(sum_p, 2));\r\n\treturn Fm * derivF - Ym * pdot - pow(omega, 2) * p;\r\n}\r\n\r\nHistory p0(0.01);\r\nHistory p1(0.0);\r\nHistory p2(0.0);\r\n\r\nHistory pdot0(0.0);\r\nHistory pdot1(0.0);\r\nHistory pdot2(0.0);\r\n\r\n\r\nA = in2;\r\nB = in3;\r\nC = in4;\r\ndt = 1/SAMPLERATE;\r\nEPS = 0.0001;\r\ngate = (A < EPS) || (abs(B) < EPS) || (abs(C) < EPS);\r\n\r\n\r\n// Compute the sum of all p_i and pdot_i\r\nsum_p = p0 + p1 + p2;\r\nsum_pdot = pdot0 + pdot1 + pdot2;\r\n\r\nout1 = sum_p;\r\nout2 = sum_pdot;\r\n\r\n// Mode 0\r\nnew_p = p0 + dt * pdot0;\r\nnew_pdot = pdot0 + dt * deriv_pdot(sum_p, sum_pdot, p0, pdot0, Fm, Ym0, A, B, C, omega0);\r\np0 = gate ? 0.01 : new_p;\r\npdot0 = gate ? 0.0 : new_pdot;\r\n\r\n// Mode 1\r\nnew_p = p1 + dt * pdot1;\r\nnew_pdot = pdot1 + dt * deriv_pdot(sum_p, sum_pdot, p1, pdot1, Fm, Ym1, A, B, C, omega1);\r\np1 = gate ? 0.01 : new_p;\r\npdot1 = gate ? 0.0 : new_pdot;\r\n\r\n// Mode 2\r\nnew_p = p2 + dt * pdot2;\r\nnew_pdot = pdot2 + dt * deriv_pdot(sum_p, sum_pdot, p2, pdot2, Fm, Ym2, A, B, C, omega2);\r\np2 = gate ? 0.01 : new_p;\r\npdot2 = gate ? 0.0 : new_pdot;",
+									"code" : "// Forward Euler\r\nderiv_pdot(sum_p, sum_pdot, p, pdot, Fm, Ym, A, B, C, omega)\r\n{\r\n\tderivF = sum_pdot * (A + 2*B*sum_p + 3*C*pow(sum_p, 2));\r\n\treturn Fm * derivF - Ym * pdot - pow(omega, 2) * p;\r\n}\r\n\r\n// step for one pair of p_i, pdot_i\r\nrk_step(sum_p, sum_pdot, p, pdot, dt, Fm, Ym, A, B, C, omega)\r\n{\r\n\t// K1\r\n\tk1_p = pdot;\r\n\tk1_pdot = deriv_pdot(sum_p, sum_pdot, p, pdot, Fm, Ym, A, B, C, omega);\r\n\r\n\t// K2\r\n\tk2_p = pdot + 0.5 * dt * k1_pdot;\r\n\tk2_pdot = deriv_pdot(sum_p, sum_pdot, p + 0.5 * dt * k1_p, k2_p, Fm, Ym, A, B, C, omega);\r\n\r\n\t// K3\r\n\tk3_p = pdot + 0.5 * dt * k2_pdot;\r\n\tk3_pdot = deriv_pdot(sum_p, sum_pdot, p + 0.5 * dt * k2_p, k3_p, Fm, Ym, A, B, C, omega);\r\n\r\n\t//K4\r\n\tk4_p = pdot + dt * k3_pdot;\r\n\tk4_pdot = deriv_pdot(sum_p, sum_pdot, p + dt * k3_p, k4_p, Fm, Ym, A, B, C, omega);\r\n\r\n\tnew_p = p + dt / 6 * (k1_p + 2*k2_p + 3*k3_p + k4_p);\r\n\tnew_pdot = pdot + dt / 6 * (k1_pdot + 2*k2_pdot + 3*k3_pdot + k4_pdot);\r\n\t\r\n\treturn new_p, new_pdot;\r\n}\r\n\r\n\r\nHistory p0(0.01);\r\nHistory p1(0.0);\r\nHistory p2(0.0);\r\n\r\nHistory pdot0(0.0);\r\nHistory pdot1(0.0);\r\nHistory pdot2(0.0);\r\n\r\n\r\nA = in2;\r\nB = in3;\r\nC = in4;\r\ndt = 1/SAMPLERATE;\r\nEPS = 0.0001;\r\ngate = (A < EPS) || (abs(B) < EPS) || (abs(C) < EPS);\r\n\r\n\r\n// Compute the sum of all p_i and pdot_i\r\nsum_p = p0 + p1 + p2;\r\nsum_pdot = pdot0 + pdot1 + pdot2;\r\n\r\nout1 = sum_p;\r\nout2 = sum_pdot;\r\n\r\n// Mode 0\r\nnew_p, new_pdot = rk_step(sum_p, sum_pdot, p0, pdot0, dt, Fm, Ym0, A, B, C, omega0);\r\np0 = gate ? 0.01 : new_p;\r\npdot0 = gate ? 0.0 : new_pdot;\r\n\r\n// Mode 1\r\nnew_p, new_pdot = rk_step(sum_p, sum_pdot, p1, pdot1, dt, Fm, Ym1, A, B, C, omega1);\r\np1 = gate ? 0.01 : new_p;\r\npdot1 = gate ? 0.0 : new_pdot;\r\n\r\n// Mode 2\r\nnew_p, new_pdot = rk_step(sum_p, sum_pdot, p2, pdot2, dt, Fm, Ym2, A, B, C, omega2);\r\np2 = gate ? 0.01 : new_p;\r\npdot2 = gate ? 0.0 : new_pdot;",
 									"fontface" : 0,
 									"fontname" : "<Monospaced>",
 									"fontsize" : 12.0,
