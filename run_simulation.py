@@ -64,7 +64,7 @@ def labels(X, descriptor, abscisse,
     if modele == 'guide_onde': #Paramètres des méthode
         from modelisation_physique.guide_onde import simulation
     else :
-        from modelisation_physique.Modele_modal_fct_rampe import simulation
+        from modelisation_physique.modal_solveur_python import simulation
         
  
     # Descripteur choisit
@@ -72,12 +72,13 @@ def labels(X, descriptor, abscisse,
         epsilon = arg_descriptor
         type_reflection='dirac'
         for i, x in tqdm(X.iterrows()):
-            try : 
-                waveform, _ = simulation(x[abscisse], x[ordonnee], t_max, fe, L,  nb_mode, instrument, durete_rampe) 
+            #try : 
+
+                waveform, _, _= simulation(x[abscisse], x[ordonnee], t_max, fe, L,  int(nb_mode), instrument, durete_rampe) 
         
                 y[i] = 1 if dp.are_there_oscillations(waveform, epsilon) else 0
-            except ValueError:
-                continue
+            #except ValueError:
+                #continue
         return y
     
     elif descriptor == "pitch" :
@@ -86,7 +87,8 @@ def labels(X, descriptor, abscisse,
         fe ,epsilon ,cents_threshold, zeta = arg_descriptor
         
         for i, x in tqdm(X.iterrows()): 
-                waveform, _= simulation(x[abscisse], zeta , t_max, fe, x[ordonnee], nb_mode, instrument, durete_rampe)
+            try :
+                waveform, _, _= simulation(x[abscisse],x[ordonnee], t_max, fe,L, int(nb_mode), instrument, durete_rampe)
 
                 f0 = dp.get_f0(waveform, fe) * dp.are_there_oscillations(waveform, epsilon)
                 is_close, idx = dp.f0_to_categorical(f0, note_frequencies, cents_threshold)
@@ -94,6 +96,8 @@ def labels(X, descriptor, abscisse,
                     y[i] = idx
                 else:
                     y[i] = n_classes
+            except : 
+                pass
         return y 
 
 y = labels(X, descriptor, abscisse, ordonnee, modele, instrument, arg_modele, arg_descriptor, note_frequencies)

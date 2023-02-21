@@ -38,15 +38,15 @@ Fe = 44100                                                                 % Fr�
 c = 340                                                                   % Vitesse des ondes dans l'instrument
 nb_mode = 5                                                                % Nombre de modes considérés ( dans la méthode modale )
 durete_rampe = 20                                                          % Pente d'évolution de gamma
-
+% Arguments en entrée de la fonction du modèle considéré : 
+arg_modele= [t_max Fe L c nb_mode durete_rampe] 
 
 % Chargement des paramètres des descripteurs : fréquences harmoniques observées sur une gamme choisie
 note_frequencies = [65.41, 69.3, 73.42, 77.78, 82.41, 87.31, 92.5, 98, 103.83, 110, 116.54, 123.47, 130.8]
 %note_frequencies = [130.8, 138.5, 146.8, 155.5, 164.8, 174.6, 184.9, 195.9,207.6,220, 223,246.9, 261]
 
 L = c/(4*note_frequencies(3))
-% Arguments en entrée de la fonction du modèle considéré : 
-arg_modele= [t_max Fe L c nb_mode durete_rampe] 
+
 % Chargement des paramètres de sampling
 num_samples = 100                                                          % Nombre de points pour le mapping initiale
 iterations =  150                                                          % Nombre d'itérations de la méthode d'échantillonnage adaptatif
@@ -133,7 +133,7 @@ elseif descriptor == "pitch"
     epsilon_length = 0.05                                                  % Marge de longueurde l'instrument
     osc_threshold = 0.3                                                   % Critère d'oscillations (ou non)
     cents_threshold = 5                                                   % Différence maximale en cent par rapport à la note de référence 
-    dim1 = [0.01,abscisse_max]                                              % Valeurs de gamma
+    dim1 = [0,abscisse_max]                                              % Valeurs de gamma
     dim2 = [0,ordonnee_max]        
     %dim2 = [ c/(4*note_frequencies(end))-epsilon_length,  c/(4*note_frequencies(1))+epsilon_length]
     figure('Position',[200 200 500 500])
@@ -218,16 +218,14 @@ elseif descriptor == "pitch"
                         label(j)= 0 
                    end
             end  
-            X_name = strcat('X_',stringf(freq__), '.mat')
-            labels_name = strcat('labels_',stringf(freq__), '.mat')
-            save(X_name,'X')
-            save(labels_name','label')
+            save('X_D1.mat','X')
+            save('label_D1.mat','label')
 
         end
       
     end
 
-    %%{
+    %{
     % Cas particulier de la première fréquence observée (
     % note_frequencies(1))
     % telle que la fonction labels de 'run_simulation.py' renvoie idx = 0.
@@ -300,10 +298,8 @@ elseif descriptor == "pitch"
      
     hold on
     svm.isoplot
-    X_name = strcat('X_',stringf(freq0), '.mat')
-    labels_name = strcat('labels_',stringf(freq0), '.mat')
-    save(X_name,'X')
-    save(labels_name','label')
+    save('X_0.mat','X')
+    save('labels_0.mat','label')
     
     xlabel(abscisse, 'FontSize', fontSize)
     ylabel(ordonnee, 'FontSize', fontSize)

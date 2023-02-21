@@ -42,30 +42,36 @@ def are_there_oscillations(waveform, epsilon):
     -------
     True or False selon la condition : y-a-t-il oscillation ou non ?
     """
-    '''
+    
     N2_3 = int(len(waveform) / 3)                #Intervalle d'observation du signal, choisi au dernier tier du temps de simulation
      
     waveform_ = waveform[N2_3:]                  #Zone du signal à observer
-    waveform_ = waveform_- np.mean(waveform_)     #Centrage en zéro
-    waveform_= waveform_/np.max(np.abs(waveform_))       #Normalisation
-  
-    criterion = np.mean(np.abs(waveform_))       #Calcul de la moyenne du signal  
+
+    
     
 
+    waveform_ = waveform_- np.mean(waveform_)     #Centrage en zéro
+    waveform_= waveform_/np.max(np.abs(waveform_))       #Normalisation
+      
+    criterion = np.mean(np.abs(waveform_))       #Calcul de la moyenne du signal  
     '''
+
+    if np.max(waveform_) < 1e-2 : 
+        criterion = False
+    else : 
     N1 = int(len(waveform)/ 5) #début du signal
     N2 = len(waveform)-N1 #fin du signal
     
     #Calcul du rapport entre début et fin du signal
     criterion = np.abs(np.max(waveform[N2:])/np.max(waveform[:N1]))
-    
+    '''
     
     return criterion > epsilon 
 
 
 
 #Pitch
-def get_f0(waveform, sr, fmin=librosa.note_to_hz("C2"), fmax=librosa.note_to_hz("C4")):
+def get_f0(waveform, sr, fmin=librosa.note_to_hz("C1"), fmax=librosa.note_to_hz("C3")):
     
     """ 
     Estimate F0 using Yin's algorithm. The algorithm is applied frame by frame
