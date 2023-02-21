@@ -207,9 +207,9 @@ def cordes(
     n = 25
     
     Fm, Ym, fr_m = coeffs_modaux_cordes(c0=c0_cordes,l=l,beta=beta)
-    print(Fm)
-    print(fr_m)
-    print(c0_cordes)
+    #print(Fm)
+    #print(fr_m)
+    #print(c0_cordes)
     omega = 2*np.pi*fr_m
 
     Nsim = int(t_max*sample_rate)
