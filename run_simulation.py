@@ -75,7 +75,7 @@ def labels(X, descriptor, abscisse,
             #try : 
 
                 waveform, _, _= simulation(x[abscisse], x[ordonnee], t_max, fe, L,  int(nb_mode), instrument, durete_rampe) 
-        
+       
                 y[i] = 1 if dp.are_there_oscillations(waveform, epsilon) else 0
             #except ValueError:
                 #continue

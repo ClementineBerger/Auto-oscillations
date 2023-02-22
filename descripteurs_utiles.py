@@ -42,7 +42,7 @@ def are_there_oscillations(waveform, epsilon):
     -------
     True or False selon la condition : y-a-t-il oscillation ou non ?
     """
-    
+    '''
     N2_3 = int(len(waveform) / 3)                #Intervalle d'observation du signal, choisi au dernier tier du temps de simulation
      
     waveform_ = waveform[N2_3:]                  #Zone du signal à observer
@@ -56,15 +56,15 @@ def are_there_oscillations(waveform, epsilon):
     criterion = np.mean(np.abs(waveform_))       #Calcul de la moyenne du signal  
     '''
 
-    if np.max(waveform_) < 1e-2 : 
+    if np.max(waveform) < 1e-2 : 
         criterion = False
     else : 
-    N1 = int(len(waveform)/ 5) #début du signal
-    N2 = len(waveform)-N1 #fin du signal
-    
+        N1 = int(len(waveform)/ 5) #début du signal
+        N2 = len(waveform)-N1 #fin du signal
+        
     #Calcul du rapport entre début et fin du signal
     criterion = np.abs(np.max(waveform[N2:])/np.max(waveform[:N1]))
-    '''
+    
     
     return criterion > epsilon 
 
