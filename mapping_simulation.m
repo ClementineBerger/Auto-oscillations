@@ -20,7 +20,7 @@ fontSize = 14;
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-instrument ='corde'                                                   % Type d'instrument étudié
+instrument ='clarinette'                                                   % Type d'instrument étudié
 descriptor = "are_there_oscillations"                                      % Descripteur à observer
 modele = "modale"                                                      % Modèle choisit 
 
@@ -29,14 +29,14 @@ modele = "modale"                                                      % Modèle
 abscisse = "gamma" 
 abscisse_max = 1                                                           %Étendue de l'axe
 ordonnee = "zeta" 
-ordonnee_max = 10
+ordonnee_max = 1
 
 % Chargement des paramètres des modèles
 t_max= 0.3                                                             % Durée de la simulation (secondes)
 Fe = 44100                                                                 % Fréquence d'échantillonnage (Hz)
 L= 0.33                                                                    % Longueur du cylindre/corde (mètre)
 c = 340                                                                   % Vitesse des ondes dans l'instrument
-nb_mode = 2                                                                % Nombre de modes considérés ( dans la méthode modale )
+nb_mode = 5                                                                % Nombre de modes considérés ( dans la méthode modale )
 durete_rampe = 20                                                          % Pente d'évolution de gamma
 arg_modele= [t_max Fe L c nb_mode durete_rampe] 
 
@@ -57,7 +57,7 @@ if descriptor == "are_there_oscillations"
     %++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     % Paramètres descripteurs
     dim1 = [0.01,abscisse_max]                                              % Étendue des axes, ici gamma 
-    dim2 = [1,ordonnee_max]                                                % Ici Zeta
+    dim2 = [0,ordonnee_max]                                                % Ici Zeta
     epsilon = 0.5                                                         % Critère d'amplitude d'oscillations 
     arg_descriptor= [epsilon]
     
@@ -84,6 +84,8 @@ if descriptor == "are_there_oscillations"
      
      % Calcul de sa SVM
      svm =CODES.fit.svm(X,label);
+     figure('Position',[200 200 500 500])
+     svm.isoplot
    
      %+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      % ECHANTILLONNAGE ADAPTATIF - OSCILLATIONS ENTRETENUES 
@@ -109,8 +111,8 @@ if descriptor == "are_there_oscillations"
          % Calcul de la SVM raffinée
          svm=CODES.fit.svm(X,label);
 
-         %second sample
-         x_al=CODES.sampling.anti_lock(svm,[min(dim1) min(dim2)],[max(dim1) max(dim2)])
+         %Calcul du second sample
+         x_al=CODES.sampling.anti_lock(svm,[min(dim1) min(dim2)],[max(dim1) 0.9])
          X_label = [X(end,:);x_al];
          labels = transpose(double(pyrunfile("run_simulation.py","y", ...
                              X=X_label, ...
@@ -122,9 +124,11 @@ if descriptor == "are_there_oscillations"
                              arg_modele=arg_modele, ...
                              arg_descriptor=arg_descriptor, ...
                              note_frequencies=note_frequencies)))
+
          % Ajout du nouvel échantillon au mapping
          label = [label;labels(end)]
          X=[X; x_al]
+
          % Calcul de la SVM raffinée
          svm=CODES.fit.svm(X,label);
 
@@ -132,6 +136,7 @@ if descriptor == "are_there_oscillations"
      end
      figure('Position',[200 200 500 500])
      svm.isoplot
+     
      % title("\bf Oscillations mapping pour le/la "+ instrument, 'FontSize', fontSize)
      xlabel('{\bf \gamma}', 'FontSize', fontSize)
      ylabel('{\bf \zeta}', 'FontSize', fontSize)
