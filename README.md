@@ -18,15 +18,15 @@ La synthèse sonore par modèles physiques permet de produire une grande variét
 Site web : https://pliplouf.github.io/Auto-oscillations/
 
 ## Notice
-modelisation_physique :
-  bifurcations.py : Trace un diagramme de bifurcation.
-      Ligne 17 : Entrer les paramètres relatifs au calcul.
-      Ligne 32 : Entrer un modèle (modal par défaut) et les paramètres supplémentaires si besoin.
-  Modele_modal_fct_rampe.py : Donne un son simulé de clarinette, violon ou saxophone.
-      A la fin du code il faut commenter/décommenter l'instrument que l'on souhaite modéliser (par défaut c'est la clarinette qui est décommentée).
-      Ligne 434 : tmax correspond à la durée de simulation.
-      gamma_velo correspond tantôt à gamma pour la clarinette et le sax, tantôt à la vitesse dans le cas du violon.
-      zeta_force : même logique pour zeta et la force.
-      durete_rampe : correspond à la vitesse de l'attaque entre 20 et 2000.
-      l_resonateur : longueur du résonateur.
-  resonateur.py : Calcule la fonction de transfert de la caisse d'un violon sur la base d'un vecteur p correspondant à la vitesse au chevalet.
+modelisation_physique :   
+  bifurcations.py : Trace un diagramme de bifurcation.   
+      Ligne 17 : Entrer les paramètres relatifs au calcul.   
+      Ligne 32 : Entrer un modèle (modal par défaut) et les paramètres supplémentaires si besoin.   
+  Modele_modal_fct_rampe.py : Donne un son simulé de clarinette, violon ou saxophone.   
+      A la fin du code il faut commenter/décommenter l'instrument que l'on souhaite modéliser (par défaut c'est la clarinette qui est décommentée).   
+      Ligne 434 : tmax correspond à la durée de simulation.   
+      gamma_velo correspond tantôt à gamma pour la clarinette et le sax, tantôt à la vitesse dans le cas du violon.   
+      zeta_force : même logique pour zeta et la force.   
+      durete_rampe : correspond à la vitesse de l'attaque entre 20 et 2000.   
+      l_resonateur : longueur du résonateur.   
+  resonateur.py : Calcule la fonction de transfert de la caisse d'un violon sur la base d'un vecteur p correspondant à la vitesse au chevalet.   
