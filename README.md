@@ -18,9 +18,10 @@ La synthèse sonore par modèles physiques permet de produire une grande variét
 Site web : https://pliplouf.github.io/Auto-oscillations/
 
 ## Notice
+<pre>
 modelisation_physique :   
   bifurcations.py : Trace un diagramme de bifurcation.   
-  Ligne 17 : Entrer les paramètres relatifs au calcul.   
+      Ligne 17 : Entrer les paramètres relatifs au calcul.   
       Ligne 32 : Entrer un modèle (modal par défaut) et les paramètres supplémentaires si besoin.   
   Modele_modal_fct_rampe.py : Donne un son simulé de clarinette, violon ou saxophone.   
       A la fin du code il faut commenter/décommenter l'instrument que l'on souhaite modéliser (par défaut c'est la clarinette qui est décommentée).   
@@ -30,3 +31,4 @@ modelisation_physique :
       durete_rampe : correspond à la vitesse de l'attaque entre 20 et 2000.   
       l_resonateur : longueur du résonateur.   
   resonateur.py : Calcule la fonction de transfert de la caisse d'un violon sur la base d'un vecteur p correspondant à la vitesse au chevalet.   
+</pre>
