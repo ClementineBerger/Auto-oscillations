@@ -20,7 +20,7 @@ Site web : https://pliplouf.github.io/Auto-oscillations/
 ## Notice
 modelisation_physique :   
   bifurcations.py : Trace un diagramme de bifurcation.   
-      Ligne 17 : Entrer les paramètres relatifs au calcul.   
+  Ligne 17 : Entrer les paramètres relatifs au calcul.   
       Ligne 32 : Entrer un modèle (modal par défaut) et les paramètres supplémentaires si besoin.   
   Modele_modal_fct_rampe.py : Donne un son simulé de clarinette, violon ou saxophone.   
       A la fin du code il faut commenter/décommenter l'instrument que l'on souhaite modéliser (par défaut c'est la clarinette qui est décommentée).   
