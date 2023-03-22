@@ -173,7 +173,7 @@ plt.ylabel("vitesse corde")
 
 plt.show()
 
-"""
+
 n_p = 50
 n_z = 8
 for z in range(n_z):
@@ -191,4 +191,4 @@ plt.ylabel("amplitude")
 plt.title("bifurcation")
 plt.show()
 
-
+"""
