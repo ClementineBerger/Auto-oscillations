@@ -31,4 +31,6 @@ modelisation_physique :
       durete_rampe : correspond à la vitesse de l'attaque entre 20 et 2000.   
       l_resonateur : longueur du résonateur.   
   resonateur.py : Calcule la fonction de transfert de la caisse d'un violon sur la base d'un vecteur p correspondant à la vitesse au chevalet.   
+  McIntyre-violon.py : Simule un son de violon, avec la possibilité de changer la fonction F (modélisant la non-linéarité du contact archet-corde).
+  McIntyre_anche.py : Simule un son d'instrument à anche, avec un modèle simplifié de dynamique d'anche. L'anche est décrite par les paramètres Q et omega qui sont respectivement le facteur de qualité et la fréquence de résonance de l'anche.
 </pre>
