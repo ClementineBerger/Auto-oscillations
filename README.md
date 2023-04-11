@@ -18,6 +18,9 @@ La synthèse sonore par modèles physiques permet de produire une grande variét
 Site web : https://pliplouf.github.io/Auto-oscillations/
 
 ## Notice
+
+### Modélisation modale
+Ré-implémentation de la méthode de résolution Runge-Kutta d'ordre 4 en vue de l'implémentation temps-réel dans MAX MSP :
 <pre>
 modelisation_physique :   
   bifurcations.py : Trace un diagramme de bifurcation.   
@@ -31,7 +34,16 @@ modelisation_physique :
       durete_rampe : correspond à la vitesse de l'attaque entre 20 et 2000.   
       l_resonateur : longueur du résonateur.   
   resonateur.py : Calcule la fonction de transfert de la caisse d'un violon sur la base d'un vecteur p correspondant à la vitesse au chevalet.   
-  McIntyre-violon.py : Simule un son de violon, avec la possibilité de changer la fonction F (modélisant la non-linéarité du contact archet-corde).
-  McIntyre_anche.py : Simule un son d'instrument à anche, avec un modèle simplifié de dynamique d'anche.
-      L'anche est décrite par les paramètres Q et omega qui sont respectivement le facteur de qualité et la fréquence de résonance de l'anche.
 </pre>
+
+Ou résolution avec l'implémentation scipy : ```modal_solveur_python.py```.
+
+### Modélisation par guide d'onde
+
+- ```guide_onde.py``` : modèles de clarinette et de violon (voir la notice dans le code).
+- ```McIntyre_anche.py``` : modélisation de la clarinette avec ajout de la dynamique d'anche.
+- ```ìmpedances.ipynb``` : tracés d'impédances pour la clarinette.
+
+## Exemples et figures
+
+Des figures sont tracés dans le dossier ```modelisation_physique``` pour observer divers exmeples de résultats et comparaisons entre les différents modèles. Des exemples audios sont aussi disponibles dans le dossier ```audio``` avec les formes d'ondes associées, ainsi que sur la page github.
