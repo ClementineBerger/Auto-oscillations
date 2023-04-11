@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
+import soundfile as sf
 
 """
 Chaigne et Kergomard
@@ -151,7 +152,7 @@ def simulation(
 
 sample_rate = 44100
 F0 = 440 # fréquence supposée de l'instrument, en Hz
-t_max = .2 # durée de la simulation, en s
+t_max = 2 # durée de la simulation, en s
 
 T = 1/F0 # période supposée de l'instrument, en s
 i_T = int(sample_rate*T) # période supposée de l'instrument, en nb échantillon
@@ -163,16 +164,24 @@ n_F = 201
 
 tableau_des_temps = np.linspace(0, t_max, nt)
 
+plt.figure(figsize=(15,6))
 plt.subplot(2,1,1)
 pres = embouchure(.5,.5,4224,1)
-plt.plot(tableau_des_temps,pres)
-plt.ylabel("pression clarinette")
+sf.write("audio/clarinette_anche.wav",pres,sample_rate)
+plt.plot(tableau_des_temps,pres,color = 'lightseagreen')
+plt.ylabel("Pression clarinette",size=14)
+plt.xlim(0,0.5)
 
 plt.subplot(2,1,2)
 pres = embouchure(.5,.5,1056,1)
-plt.plot(tableau_des_temps,pres)
-plt.xlabel("temps")
-plt.ylabel("pression cuivre")
+sf.write("audio/cuivre.wav",pres,sample_rate)
+plt.plot(tableau_des_temps,pres,color = 'lightseagreen')
+plt.xlabel("Temps en s",size=14)
+plt.ylabel("Pression cuivre",size=14)
+plt.xlim(0,0.5)
 
-plt.savefig("nom.pdf", transparent=True,bbox_inches = "tight")
+plt.tight_layout()
+
+#plt.savefig("modelisation_physique/figures/dynamique_anche.pdf", transparent=True,bbox_inches = "tight")
+plt.savefig("audio/dynamique_anche.png", transparent=True,bbox_inches = "tight")
 plt.show()

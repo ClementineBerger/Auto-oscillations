@@ -2,9 +2,9 @@
 @author : Clémentine BERGER & Amélie PICARD
 
 Implémentation guide d'onde suivant l'article de McIntyre : à l'avantage d'être plus modulable
-avec la possibilité de changer de fonction de réflexion au bout du guide d'onde
+avec la possibilité de changer de fonction de réflexion au bout du guide d'onde.
 
-Ce script fonctionne pour une simulation de longueur L et pour une corde pincée en son MILIEU
+Ce script fonctionne pour des modèles de clarinette et de violon (corde pincée en son MILIEU).
 """
 
 
@@ -303,7 +303,7 @@ def clarinette(
                 u[j] = tab_F[i]
                 #ph = convolution(ind_tau=j, reflex_list=reflex_list, signal_list=p + u)
             elif rampe and j < ind_rampe:
-                ph = -(p[j - indT] + u[j - indT])
+                ph = -pertes_dirac*(p[j - indT] + u[j - indT])
                 i = find_zero(solvFs[j] - ph, i_act)
                 i_act = i
                 p[j] = tabs_p[j, i]
@@ -367,7 +367,7 @@ def clarinette(
 ####### Instruments à cordes frottées
 
 
-def Fcordes(v, vb, v0, Fb, mu_s, mu_d):
+def Fcordes_old(v, vb, v0, Fb, mu_s, mu_d):
     dv = (vb - v) / v0
     # dv = v/v0
     a = 2 * (mu_s - mu_d) * Fb
@@ -375,8 +375,13 @@ def Fcordes(v, vb, v0, Fb, mu_s, mu_d):
     sgn = (dv) / abs(dv)
     return a * dv / (1 + dv ** 2) + b
 
+def Fcordes(v,vb,Fb,mu_s,mu_d,n):
+    dv = vb - v
+    alpha = np.sqrt(mu_s*(mu_s-mu_d))
+    eps = 1e-4
+    return Fb*(mu_d*dv*np.sqrt(dv**2 + eps/(n**2))+2*alpha*dv/n)/(dv**2 + 1/(n**2))
 
-def tableau_Fcordes(vmin, vmax, nb_pts, vb, v0, Fb, mu_s, mu_d):
+def tableau_Fcordes(vmin, vmax, nb_pts, vb, v0, Fb, mu_s, mu_d,n):
     """
     Rempli un tableau F pour faire la recherche de 0
 
@@ -385,7 +390,7 @@ def tableau_Fcordes(vmin, vmax, nb_pts, vb, v0, Fb, mu_s, mu_d):
     nb_pts = nombre de points de calculs
     """
     tab_v = np.linspace(vmin, vmax, nb_pts)
-    tab_f = Fcordes(tab_v, vb, v0, Fb, mu_s, mu_d)
+    tab_f = Fcordes(tab_v,vb,Fb,mu_s,mu_d,n=n)
 
     return tab_v, tab_f
 
@@ -407,7 +412,7 @@ def reflexion_cordes(alpha1, alpha2, max_ref, Nsim, sample_rate, beta, l, c0):
     Returns:
         _array_: vecteur contenant la fonction de réflexion
     """
-    alpha1 = -0.49
+    alpha1 = -0.5
     alpha2 = -0.49
 
     r_idea = np.zeros(Nsim)
@@ -419,11 +424,9 @@ def reflexion_cordes(alpha1, alpha2, max_ref, Nsim, sample_rate, beta, l, c0):
     nb_alphas1 = np.zeros(2 * max_ref)
     nb_alphas1[0::2] = np.arange(1, max_ref + 1)
     nb_alphas1[1::2] = np.arange(1, max_ref + 1)
-    print(nb_alphas1)
 
     nb_alphas2 = np.zeros(2 * max_ref)
     nb_alphas2[1:] = nb_alphas1[:-1]
-    print(nb_alphas2)
 
     distances = 2 * beta * l + nb_alphas1 + 2 * (1 - beta) * l + nb_alphas2
     ind_tps = (sample_rate * distances / c0).astype(int)
@@ -488,7 +491,8 @@ def cordes(
     fig=False,
     sound=False,
 ):
-    """Simulation du violon par la méthode du guide d'onde
+    """
+    Simulation du violon par la méthode du guide d'onde
 
     Args:
         t_max (_float_): durée de la simulation en s
@@ -496,7 +500,7 @@ def cordes(
         gamma (_type_): vb vitesse de l'archet sur la corde
         zeta (_type_): force exercée par l'archet sur la corde
         beta (_type_): fraction de la longueur de la corde correspondant à la position de l'archet
-        l (_type_): longeur de la corde
+        l (_type_): longueur de la corde
         type_reflection (str, optional): inutile dans ce modèle. Defaults to 'dirac'.
         rampe (bool, optional): pour l'instant inutile, je vais essayer de le rajouter. Defaults to False.
         t_rampe (float, optional): _description_. Defaults to 0.2.
@@ -550,27 +554,29 @@ def cordes(
     reflex_list = reflexion_cordes(
         alpha1, alpha2, max_ref, Nsim, sample_rate, beta, l, c0
     )
+    
+    n = 100
 
     tab_v, tab_f = tableau_Fcordes(
-        -vb * (1 - beta) / beta - 0.5,
-        2 * vb * (1 - beta) / beta + 0.5,
+        -2,
+        2,
         4000,
-        vb,
-        v0,
-        Fb,
-        mu_s,
-        mu_d,
+        vb=vb,
+        v0=v0,
+        Fb=Fb,
+        mu_s=mu_s,
+        mu_d=mu_d,
+        n=n,
     )
 
     solvF = tab_v - tab_f / 2 / Z
-    plt.plot(tab_v, tab_f / 2 / Z, color="darkblue")
 
-    iprevious = np.argmin(tab_f) - 10
+    iprevious = np.argmax(tab_f)
     vhs = []
 
     for j in range(Nsim):
         vh = convolution(ind_tau=j, reflex_list=reflex_list, signal_list=v + f / 2 / Z)
-        i = find_zero(solvF - vh, iprevious)
+        i = find_zero_cordes(solvF - vh, iprevious)
         iprevious = i
         vhs.append(vh)
         v[j] = tab_v[i]
