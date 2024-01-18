@@ -15,7 +15,7 @@ La synthèse sonore par modèles physiques permet de produire une grande variét
 
 ### Exemples audios 
 
-Site web : https://pliplouf.github.io/Auto-oscillations/
+Site web : https://ClementineBerger.github.io/Auto-oscillations/
 
 ## Notice
 
